@@ -1,0 +1,550 @@
+[
+  {
+    "fact_id": "fact_001",
+    "case_id": "case_001",
+    "statement": "Dr. Rishabh Malhotra, a 42-year-old clinical psychologist and behavioural analyst, was murdered in his private apartment on the 17th floor of Blackwood Residency.",
+    "category": "victim",
+    "importance": "critical",
+    "related_entity_ids": [
+      "victim_001",
+      "location_blackwood_apartment_17f"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_002",
+    "case_id": "case_001",
+    "statement": "Rishabh Malhotra's cause of death was poisoning.",
+    "category": "method",
+    "importance": "critical",
+    "related_entity_ids": [
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_003",
+    "case_id": "case_001",
+    "statement": "Rishabh Malhotra's estimated time of death is between 9:00 PM and 10:30 PM on Day 1. This is an estimate, not a verified time.",
+    "category": "timeline",
+    "importance": "high",
+    "related_entity_ids": [
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_004",
+    "case_id": "case_001",
+    "statement": "Rishabh was found sitting upright in his study, facing an empty chair, with a chessboard between the two chairs.",
+    "category": "crime_scene",
+    "importance": "medium",
+    "related_entity_ids": [
+      "victim_001",
+      "location_blackwood_apartment_17f",
+      "object_chessboard"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_005",
+    "case_id": "case_001",
+    "statement": "Rishabh's right hand was holding a white chess piece.",
+    "category": "crime_scene",
+    "importance": "medium",
+    "related_entity_ids": [
+      "victim_001",
+      "object_chessboard",
+      "object_white_chess_piece"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_006",
+    "case_id": "case_001",
+    "statement": "The black king was missing from the chessboard; there were 15 pieces on the board instead of 16.",
+    "category": "crime_scene",
+    "importance": "medium",
+    "related_entity_ids": [
+      "object_chessboard",
+      "object_black_king"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_007",
+    "case_id": "case_001",
+    "statement": "A note addressed to \"Detective\" was left on the table in the study. It reads: \"Detective, you always believed that understanding people meant knowing what they would do next. Let's see if you understand what happened yesterday.\" Below the message is the handwritten number 03.",
+    "category": "crime_scene",
+    "importance": "high",
+    "related_entity_ids": [
+      "object_killer_note",
+      "victim_001",
+      "player_detective"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_008",
+    "case_id": "case_001",
+    "statement": "The Puppeteer, the serial killer who murdered Lavanya and Tara Mehra, is responsible for Rishabh's murder. The handwriting on the note and the number 03 is the Puppeteer's.",
+    "category": "perpetrator",
+    "importance": "critical",
+    "related_entity_ids": [
+      "entity_puppeteer",
+      "object_killer_note",
+      "victim_001",
+      "player_detective"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_009",
+    "case_id": "case_001",
+    "statement": "The Puppeteer issued a message to Aarav Mehra: \"Three people. Three days. Three mistakes you made. Find me before the third day ends, or you'll watch history repeat itself.\" Rishabh is the first of the three victims.",
+    "category": "perpetrator",
+    "importance": "high",
+    "related_entity_ids": [
+      "entity_puppeteer",
+      "player_detective",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_010",
+    "case_id": "case_001",
+    "statement": "Before the murder of his family, Aarav publicly humiliated the Puppeteer during their first confrontation by predicting his next move. The Puppeteer disappeared after promising: \"You took away my identity. I'll take away everything that makes you human.\"",
+    "category": "backstory",
+    "importance": "high",
+    "related_entity_ids": [
+      "player_detective",
+      "entity_puppeteer"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_011",
+    "case_id": "case_001",
+    "statement": "Three days after that confrontation, Aarav came home to find his wife Lavanya and his two-year-old daughter Tara murdered. The killer, the Puppeteer, was never caught.",
+    "category": "backstory",
+    "importance": "high",
+    "related_entity_ids": [
+      "player_detective",
+      "entity_meera_mehra",
+      "entity_tara_mehra",
+      "entity_puppeteer"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_012",
+    "case_id": "case_001",
+    "statement": "Rishabh knew something about the night Aarav's wife and daughter were murdered.",
+    "category": "backstory",
+    "importance": "critical",
+    "related_entity_ids": [
+      "victim_001",
+      "player_detective",
+      "entity_meera_mehra",
+      "entity_tara_mehra"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_013",
+    "case_id": "case_001",
+    "statement": "Rishabh wrote an unsent message in his drafts reading: \"I know what happened to Tara. He wasn't alone that night.\" The message was never sent.",
+    "category": "physical_evidence",
+    "importance": "high",
+    "related_entity_ids": [
+      "victim_001",
+      "entity_tara_mehra",
+      "object_unsent_draft"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_014",
+    "case_id": "case_001",
+    "statement": "A confidential document titled Project Echo is missing from Rishabh's computer.",
+    "category": "research_project",
+    "importance": "high",
+    "related_entity_ids": [
+      "victim_001",
+      "object_project_echo_file"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_015",
+    "case_id": "case_001",
+    "statement": "The last recorded access to the Project Echo document was about three hours before Rishabh's death.",
+    "category": "research_project",
+    "importance": "medium",
+    "related_entity_ids": [
+      "victim_001",
+      "object_project_echo_file"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_016",
+    "case_id": "case_001",
+    "statement": "Rishabh and Dr. Nisha Verma worked together on a confidential research project involving behavioural manipulation and criminal psychology.",
+    "category": "research_project",
+    "importance": "high",
+    "related_entity_ids": [
+      "victim_001",
+      "suspect_003",
+      "entity_research_project"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_017",
+    "case_id": "case_001",
+    "statement": "Kabir Malhotra secretly financed part of Rishabh's research project.",
+    "category": "relationship",
+    "importance": "high",
+    "related_entity_ids": [
+      "suspect_002",
+      "victim_001",
+      "entity_research_project"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_018",
+    "case_id": "case_001",
+    "statement": "Dr. Nisha Verma helped develop psychological profiling techniques that the Puppeteer now uses.",
+    "category": "relationship",
+    "importance": "high",
+    "related_entity_ids": [
+      "suspect_003",
+      "entity_puppeteer"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_019",
+    "case_id": "case_001",
+    "statement": "Anaya Kapoor was romantically involved with the Puppeteer before his disappearance.",
+    "category": "relationship",
+    "importance": "critical",
+    "related_entity_ids": [
+      "suspect_001",
+      "entity_puppeteer"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_020",
+    "case_id": "case_001",
+    "statement": "Anaya Kapoor knew Rishabh Malhotra personally.",
+    "category": "relationship",
+    "importance": "high",
+    "related_entity_ids": [
+      "suspect_001",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_021",
+    "case_id": "case_001",
+    "statement": "Anaya Kapoor is a 29-year-old musician who lost her eyesight at the age of 19 following an accident.",
+    "category": "suspect_background",
+    "importance": "low",
+    "related_entity_ids": [
+      "suspect_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_022",
+    "case_id": "case_001",
+    "statement": "Anaya Kapoor knows the layout of Rishabh's apartment.",
+    "category": "suspect_conduct",
+    "importance": "high",
+    "related_entity_ids": [
+      "suspect_001",
+      "location_blackwood_apartment_17f",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_023",
+    "case_id": "case_001",
+    "statement": "Anaya Kapoor has received anonymous letters for the past six months.",
+    "category": "suspect_conduct",
+    "importance": "medium",
+    "related_entity_ids": [
+      "suspect_001",
+      "object_anonymous_letters"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_024",
+    "case_id": "case_001",
+    "statement": "Kabir Malhotra is Rishabh's 36-year-old younger brother and an entrepreneur.",
+    "category": "suspect_background",
+    "importance": "low",
+    "related_entity_ids": [
+      "suspect_002",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_025",
+    "case_id": "case_001",
+    "statement": "Kabir and Rishabh had a bitter financial dispute over their family's inheritance.",
+    "category": "suspect_background",
+    "importance": "medium",
+    "related_entity_ids": [
+      "suspect_002",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_026",
+    "case_id": "case_001",
+    "statement": "Kabir Malhotra had access to Rishabh's apartment.",
+    "category": "suspect_conduct",
+    "importance": "medium",
+    "related_entity_ids": [
+      "suspect_002",
+      "location_blackwood_apartment_17f",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_027",
+    "case_id": "case_001",
+    "statement": "Kabir Malhotra's fingerprints are on the chessboard.",
+    "category": "physical_evidence",
+    "importance": "high",
+    "related_entity_ids": [
+      "suspect_002",
+      "object_chessboard"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_028",
+    "case_id": "case_001",
+    "statement": "Kabir Malhotra recently transferred a large amount of money to an unidentified account.",
+    "category": "suspect_conduct",
+    "importance": "medium",
+    "related_entity_ids": [
+      "suspect_002"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_029",
+    "case_id": "case_001",
+    "statement": "Kabir Malhotra initially gave a false account of his last conversation with Rishabh.",
+    "category": "suspect_conduct",
+    "importance": "high",
+    "related_entity_ids": [
+      "suspect_002",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_030",
+    "case_id": "case_001",
+    "statement": "Dr. Nisha Verma is a 34-year-old psychiatrist and a professional associate of Rishabh.",
+    "category": "suspect_background",
+    "importance": "low",
+    "related_entity_ids": [
+      "suspect_003",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_031",
+    "case_id": "case_001",
+    "statement": "Dr. Nisha Verma visited Rishabh at his apartment on the evening of his death.",
+    "category": "suspect_conduct",
+    "importance": "high",
+    "related_entity_ids": [
+      "suspect_003",
+      "victim_001",
+      "location_blackwood_apartment_17f"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_032",
+    "case_id": "case_001",
+    "statement": "Dr. Nisha Verma has access to restricted medications.",
+    "category": "suspect_conduct",
+    "importance": "medium",
+    "related_entity_ids": [
+      "suspect_003"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_033",
+    "case_id": "case_001",
+    "statement": "Dr. Nisha Verma's research records have disappeared.",
+    "category": "suspect_conduct",
+    "importance": "medium",
+    "related_entity_ids": [
+      "suspect_003",
+      "entity_research_project"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_034",
+    "case_id": "case_001",
+    "statement": "Dr. Nisha Verma knows details about the murder of Aarav's family that were never made public.",
+    "category": "suspect_conduct",
+    "importance": "high",
+    "related_entity_ids": [
+      "suspect_003",
+      "player_detective",
+      "entity_meera_mehra",
+      "entity_tara_mehra"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_035",
+    "case_id": "case_001",
+    "statement": "A photograph found inside Rishabh's desk shows Rishabh, Anaya Kapoor, Dr. Nisha Verma, and an unidentified man standing together seven years earlier.",
+    "category": "physical_evidence",
+    "importance": "high",
+    "related_entity_ids": [
+      "victim_001",
+      "suspect_001",
+      "suspect_003",
+      "entity_unidentified_man",
+      "object_photograph"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_036",
+    "case_id": "case_001",
+    "statement": "Two cups of coffee were found at the scene; one contained traces of the poison and the other was clean.",
+    "category": "physical_evidence",
+    "importance": "high",
+    "related_entity_ids": [
+      "object_coffee_cups",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_037",
+    "case_id": "case_001",
+    "statement": "Only one of the two coffee cups bears Rishabh's fingerprints.",
+    "category": "physical_evidence",
+    "importance": "high",
+    "related_entity_ids": [
+      "object_coffee_cups",
+      "victim_001"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_038",
+    "case_id": "case_001",
+    "statement": "Building cameras show three people entering the apartment floor on the evening of Rishabh's death. One person's face was never captured.",
+    "category": "physical_evidence",
+    "importance": "high",
+    "related_entity_ids": [
+      "object_building_camera_footage",
+      "location_blackwood_apartment_17f"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_039",
+    "case_id": "case_001",
+    "statement": "Rishabh's wristwatch stopped at 9:17 PM, but it is damaged internally, so the stopped time is not a reliable indicator of the time of death.",
+    "category": "evidence_reliability",
+    "importance": "medium",
+    "related_entity_ids": [
+      "victim_001",
+      "object_wristwatch"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_040",
+    "case_id": "case_001",
+    "statement": "A 17-second audio recording recovered from Rishabh's phone contains two people talking, followed by a clock chiming three times.",
+    "category": "physical_evidence",
+    "importance": "medium",
+    "related_entity_ids": [
+      "victim_001",
+      "object_audio_recording"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_041",
+    "case_id": "case_001",
+    "statement": "A small red thread was found under Rishabh's fingernail. It matches neither his clothes nor the visible clothing of the three suspects.",
+    "category": "physical_evidence",
+    "importance": "high",
+    "related_entity_ids": [
+      "victim_001",
+      "object_red_thread",
+      "suspect_001",
+      "suspect_002",
+      "suspect_003"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_042",
+    "case_id": "case_001",
+    "statement": "The Puppeteer leaves carefully constructed clues and challenges investigators to interpret them.",
+    "category": "perpetrator",
+    "importance": "medium",
+    "related_entity_ids": [
+      "entity_puppeteer"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_043",
+    "case_id": "case_001",
+    "statement": "Aarav's family murder and the current murders are connected through a psychological experiment that began years ago, and every victim has a connection to a particular event in Aarav's past.",
+    "category": "larger_mystery",
+    "importance": "critical",
+    "related_entity_ids": [
+      "player_detective",
+      "entity_puppeteer",
+      "victim_001",
+      "entity_meera_mehra",
+      "entity_tara_mehra"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "fact_id": "fact_044",
+    "case_id": "case_001",
+    "statement": "Aarav's department has initiated a psychological fitness review and is considering removing him from active duty within four days.",
+    "category": "investigation_context",
+    "importance": "low",
+    "related_entity_ids": [
+      "player_detective"
+    ],
+    "schema_version": "1.0"
+  }
+]

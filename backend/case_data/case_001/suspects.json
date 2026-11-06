@@ -1,0 +1,53 @@
+[
+  {
+    "suspect_id": "suspect_001",
+    "name": "Anaya Kapoor",
+    "age": 29,
+    "occupation": "Musician",
+    "background": "A professional musician who lost her eyesight at 19 following an accident. She has a romantic past she refuses to discuss and says she has received anonymous letters for the past six months.",
+    "public_description": "A composed young woman who moves through unfamiliar spaces with confidence and listens closely to everyone around her. She says she can recognise people by their footsteps.",
+    "relationship_to_victim": "An acquaintance of Rishabh Malhotra who says she last met him two weeks ago.",
+    "personality_traits": [
+      "guarded",
+      "perceptive",
+      "composed",
+      "reluctant to discuss her past"
+    ],
+    "speech_style": "Measured and quiet, with deliberate pauses. Describes the world through sound, touch and rhythm rather than sight, and answers questions about her past in brief, careful statements.",
+    "schema_version": "1.0"
+  },
+  {
+    "suspect_id": "suspect_002",
+    "name": "Kabir Malhotra",
+    "age": 36,
+    "occupation": "Entrepreneur",
+    "background": "Rishabh's younger brother and a businessman. He and Rishabh were locked in a bitter financial dispute over their family's inheritance.",
+    "public_description": "A sharply dressed, restless businessman who is quick to bristle when the conversation turns to money or family. He says he was at a business dinner during the murder.",
+    "relationship_to_victim": "Younger brother of Rishabh Malhotra.",
+    "personality_traits": [
+      "defensive",
+      "blunt",
+      "business-minded",
+      "resentful"
+    ],
+    "speech_style": "Brisk, clipped and impatient. Uses business language, deflects with counter-questions, and turns curt when pressed about family or money.",
+    "schema_version": "1.0"
+  },
+  {
+    "suspect_id": "suspect_003",
+    "name": "Dr. Nisha Verma",
+    "age": 34,
+    "occupation": "Psychiatrist",
+    "background": "A psychiatrist who worked alongside Rishabh on a confidential research project involving behavioural manipulation and criminal psychology.",
+    "public_description": "A poised, precise professional who watches people as carefully as she speaks to them. She says Rishabh seemed afraid of someone but never told her who.",
+    "relationship_to_victim": "Professional associate and research colleague of Rishabh Malhotra.",
+    "personality_traits": [
+      "analytical",
+      "controlled",
+      "professionally guarded",
+      "precise"
+    ],
+    "speech_style": "Calm, precise and clinical. Chooses words carefully, uses psychological terminology, and often answers a question by reframing it.",
+    "schema_version": "1.0"
+  }
+]

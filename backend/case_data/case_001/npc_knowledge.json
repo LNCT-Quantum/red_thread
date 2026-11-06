@@ -1,0 +1,79 @@
+[
+  {
+    "suspect_id": "suspect_001",
+    "known_fact_ids": [
+      "fact_001",
+      "fact_010",
+      "fact_011",
+      "fact_021",
+      "fact_020",
+      "fact_023"
+    ],
+    "unknown_fact_ids": [
+      "fact_017",
+      "fact_028",
+      "fact_029",
+      "fact_032",
+      "fact_033",
+      "fact_013",
+      "fact_044"
+    ],
+    "secret_fact_ids": [
+      "fact_019",
+      "fact_022"
+    ],
+    "knowledge_notes": "Anaya admits knowing Rishabh (she says she last met him two weeks ago) and publicly known details of the murder of Aarav's family. She conceals her past romance with the man who became the Puppeteer and how she learned the layout of the apartment she claims never to have visited. She says she knows who the Puppeteer is; the source does not establish that she knows him by that identity or can name him, so she must not name anyone. Her statement that she heard an argument at 9:40 PM and recognised footsteps is her own testimony, not a canonical fact. Her sensory knowledge and its limits are not defined in the source. Facts not listed are unassigned and must be treated as not known to her."
+  },
+  {
+    "suspect_id": "suspect_002",
+    "known_fact_ids": [
+      "fact_001",
+      "fact_010",
+      "fact_011",
+      "fact_024",
+      "fact_025",
+      "fact_026",
+      "fact_016"
+    ],
+    "unknown_fact_ids": [
+      "fact_019",
+      "fact_020",
+      "fact_022",
+      "fact_032",
+      "fact_034",
+      "fact_013",
+      "fact_044"
+    ],
+    "secret_fact_ids": [
+      "fact_017",
+      "fact_028",
+      "fact_029"
+    ],
+    "knowledge_notes": "Kabir knows the family inheritance dispute, his access to the apartment, and that Rishabh ran a confidential research project (he secretly financed part of it). He conceals the financing, the transfer to an unidentified account (its purpose is not defined in the source), and the truth about his last conversation with Rishabh. Why his fingerprints are on the chessboard, and whether his business-dinner alibi is true, are not established in the source and must not be invented. Facts not listed are unassigned and must be treated as not known to him."
+  },
+  {
+    "suspect_id": "suspect_003",
+    "known_fact_ids": [
+      "fact_001",
+      "fact_010",
+      "fact_011",
+      "fact_030",
+      "fact_016",
+      "fact_031",
+      "fact_032",
+      "fact_033"
+    ],
+    "unknown_fact_ids": [
+      "fact_019",
+      "fact_022",
+      "fact_028",
+      "fact_013",
+      "fact_044"
+    ],
+    "secret_fact_ids": [
+      "fact_018",
+      "fact_034"
+    ],
+    "knowledge_notes": "Nisha knows her own research with Rishabh, her visit on the evening of his death, her access to restricted medications, and that her research records have disappeared. She conceals that she helped develop the profiling techniques the Puppeteer now uses and how she learned non-public details of the murder of Aarav's family (the source does not say how). Her claim that Rishabh was afraid of someone but never told her who is her own testimony, not a canonical fact. The purpose and duration of her visit are not established in the source. Facts not listed are unassigned and must be treated as not known to her."
+  }
+]

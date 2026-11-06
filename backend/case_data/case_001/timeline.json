@@ -1,0 +1,234 @@
+[
+  {
+    "timeline_event_id": "event_001",
+    "case_id": "case_001",
+    "timestamp": "approx. 10 years before Day 1 [approximate]",
+    "event_description": "Anaya Kapoor loses her eyesight at the age of 19 following an accident.",
+    "involved_entity_ids": [
+      "suspect_001"
+    ],
+    "related_fact_ids": [
+      "fact_021"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_002",
+    "case_id": "case_001",
+    "timestamp": "approx. 7 years before Day 1 [approximate]",
+    "event_description": "A photograph is taken showing Rishabh Malhotra, Anaya Kapoor, Dr. Nisha Verma and an unidentified man standing together.",
+    "involved_entity_ids": [
+      "victim_001",
+      "suspect_001",
+      "suspect_003",
+      "entity_unidentified_man"
+    ],
+    "related_fact_ids": [
+      "fact_035"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_003",
+    "case_id": "case_001",
+    "timestamp": "approx. 18 months and 3 days before Day 1 [approximate]",
+    "event_description": "Aarav Mehra publicly humiliates the Puppeteer by predicting his next move. The Puppeteer disappears after promising to take away everything that makes Aarav human.",
+    "involved_entity_ids": [
+      "player_detective",
+      "entity_puppeteer"
+    ],
+    "related_fact_ids": [
+      "fact_010"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_004",
+    "case_id": "case_001",
+    "timestamp": "approx. 18 months before Day 1 [approximate]",
+    "event_description": "Three days after the confrontation, Aarav finds his wife Lavanya and daughter Tara murdered. The Puppeteer is never caught.",
+    "involved_entity_ids": [
+      "player_detective",
+      "entity_meera_mehra",
+      "entity_tara_mehra",
+      "entity_puppeteer"
+    ],
+    "related_fact_ids": [
+      "fact_011"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_005",
+    "case_id": "case_001",
+    "timestamp": "approx. 6 months before Day 1 [approximate]",
+    "event_description": "Anaya Kapoor begins receiving anonymous letters.",
+    "involved_entity_ids": [
+      "suspect_001"
+    ],
+    "related_fact_ids": [
+      "fact_023"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_006",
+    "case_id": "case_001",
+    "timestamp": "years before Day 1; start date unknown [undetermined]",
+    "event_description": "The psychological experiment connecting Aarav's family murder to the current murders begins. Its start date and the order of its events relative to the other pre-Day-1 events are not established.",
+    "involved_entity_ids": [
+      "player_detective",
+      "entity_puppeteer"
+    ],
+    "related_fact_ids": [
+      "fact_043"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_007",
+    "case_id": "case_001",
+    "timestamp": "before Rishabh's death; exact time unknown [undetermined]",
+    "event_description": "Rishabh writes an unsent message in his drafts: \"I know what happened to Tara. He wasn't alone that night.\"",
+    "involved_entity_ids": [
+      "victim_001",
+      "entity_tara_mehra"
+    ],
+    "related_fact_ids": [
+      "fact_013",
+      "fact_012"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_008",
+    "case_id": "case_001",
+    "timestamp": "Day 1, about 3 hours before death [approximate]",
+    "event_description": "The Project Echo document on Rishabh's computer is accessed for the last time.",
+    "involved_entity_ids": [
+      "victim_001"
+    ],
+    "related_fact_ids": [
+      "fact_015",
+      "fact_014"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_009",
+    "case_id": "case_001",
+    "timestamp": "Day 1, evening; order relative to the death unknown [undetermined]",
+    "event_description": "Dr. Nisha Verma visits Rishabh at his apartment. The purpose and duration of the visit are not established.",
+    "involved_entity_ids": [
+      "suspect_003",
+      "victim_001"
+    ],
+    "related_fact_ids": [
+      "fact_031"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_010",
+    "case_id": "case_001",
+    "timestamp": "Day 1, evening; order relative to the death unknown [undetermined]",
+    "event_description": "Three people enter the apartment floor, as recorded by building cameras. One person's face is not captured. Their identities are not established.",
+    "involved_entity_ids": [],
+    "related_fact_ids": [
+      "fact_038"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_011",
+    "case_id": "case_001",
+    "timestamp": "Day 1, 9:00 PM to 10:30 PM [estimated]",
+    "event_description": "Rishabh Malhotra dies of poisoning in his study. One of two coffee cups at the scene contains traces of the poison.",
+    "involved_entity_ids": [
+      "victim_001",
+      "entity_puppeteer"
+    ],
+    "related_fact_ids": [
+      "fact_001",
+      "fact_002",
+      "fact_003",
+      "fact_008",
+      "fact_036"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_012",
+    "case_id": "case_001",
+    "timestamp": "Day 1, 9:17 PM displayed [unverified]",
+    "event_description": "Rishabh's damaged wristwatch stops at 9:17 PM. The actual time it stopped is not established.",
+    "involved_entity_ids": [
+      "victim_001"
+    ],
+    "related_fact_ids": [
+      "fact_039"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_013",
+    "case_id": "case_001",
+    "timestamp": "Day 1, after the death; discovery time unknown [undetermined]",
+    "event_description": "Rishabh is found seated in his study facing an empty chair, with a chessboard between the chairs, a white piece in his right hand, the black king missing, two coffee cups present, and a note with the number 03 on the table.",
+    "involved_entity_ids": [
+      "victim_001",
+      "player_detective"
+    ],
+    "related_fact_ids": [
+      "fact_004",
+      "fact_005",
+      "fact_006",
+      "fact_007",
+      "fact_036",
+      "fact_037"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_014",
+    "case_id": "case_001",
+    "timestamp": "Day 1, after the discovery; exact time unknown [undetermined]",
+    "event_description": "Aarav recognises the handwriting on the note as that of the killer who murdered his family.",
+    "involved_entity_ids": [
+      "player_detective",
+      "entity_puppeteer"
+    ],
+    "related_fact_ids": [
+      "fact_007",
+      "fact_008"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_015",
+    "case_id": "case_001",
+    "timestamp": "Day 1; delivery time unknown [undetermined]",
+    "event_description": "The Puppeteer's message to Aarav is delivered: three people, three days, three mistakes.",
+    "involved_entity_ids": [
+      "entity_puppeteer",
+      "player_detective"
+    ],
+    "related_fact_ids": [
+      "fact_009"
+    ],
+    "schema_version": "1.0"
+  },
+  {
+    "timeline_event_id": "event_016",
+    "case_id": "case_001",
+    "timestamp": "Day 1 to Day 4; removal date not fixed [approximate]",
+    "event_description": "Aarav's department conducts a psychological fitness review and considers removing him from active duty within four days.",
+    "involved_entity_ids": [
+      "player_detective"
+    ],
+    "related_fact_ids": [
+      "fact_044"
+    ],
+    "schema_version": "1.0"
+  }
+]

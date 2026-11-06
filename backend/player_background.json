@@ -1,0 +1,41 @@
+{
+  "character_id": "player_detective",
+  "name": "Aarav Mehra",
+  "role": "detective",
+  "background": "Once regarded as one of the finest investigators in the department. Known for extraordinary observation, psychological profiling, unconventional interrogation techniques, and an ability to anticipate what people will do next. Strengths: observation, behavioural analysis, interrogation and reconstructing timelines. Weaknesses: grief, obsession, emotional volatility, and a tendency to interpret new evidence through the trauma of his family's murder.",
+  "personal_history": "Aarav had a loving wife, Lavanya, and a two-year-old daughter, Tara. He publicly humiliated the serial killer known as the Puppeteer in their first confrontation by predicting his next move. The Puppeteer disappeared after promising: \"You took away my identity. I'll take away everything that makes you human.\" Three days later Aarav came home to find Meera and Tara murdered. The killer was never caught. Eighteen months later the killer has returned.",
+  "personality": [
+    "observant",
+    "analytical",
+    "grief-stricken",
+    "obsessive",
+    "emotionally volatile",
+    "prone to reading evidence through his own trauma"
+  ],
+  "motivations": [
+    "Identify the killer and stop the three further deaths the Puppeteer has promised",
+    "Find the person who murdered his wife and daughter",
+    "Understand why Rishabh Malhotra had information about his family's murder",
+    "Keep his badge and active-duty status despite the department's fitness review"
+  ],
+  "relationships": [
+    "Lavanya Mehra: his wife, murdered eighteen months before Day 1",
+    "Tara Mehra: his two-year-old daughter, murdered eighteen months before Day 1",
+    "The Puppeteer: serial killer who has fixated on him since their first confrontation",
+    "Department superiors: reviewing his psychological fitness and considering removing him from active duty within four days",
+    "Dr. Rishabh Malhotra: the victim of Case 001; the nature of any prior relationship with Aarav is not specified in the source"
+  ],
+  "current_situation": "Eighteen months after his family's murder, another murder has occurred and the killer's message is addressed to him: three people, three days, three mistakes. He has 72 hours to stop the next three murders and may have only a few days before his department removes him from active duty.",
+  "connection_to_case": "Rishabh Malhotra's murder is the first of the three murders the Puppeteer has announced. The note at the scene is addressed to Aarav and is in the handwriting of the killer who murdered his family. Rishabh appears to have had information about the night Aarav's family was murdered.",
+  "narrative_constraints": [
+    "Aarav's name is Aarav Mehra. His age, rank, appearance and years of service are not specified in the source and must not be invented.",
+    "Established backstory: his wife Meera and daughter Tara were murdered by the Puppeteer eighteen months before Day 1, and the killer was never caught.",
+    "Intentionally undisclosed: whether Aarav was unknowingly part of the killer's psychological experiment from the beginning. Neither Aarav nor any dialogue may resolve or hint at an answer.",
+    "Intentionally undisclosed: what Rishabh knew about the night of the family murder, and who 'he' refers to in the unsent message.",
+    "Aarav's theories and suspicions are not canonical case facts. Canonical truth comes only from facts.json.",
+    "Aarav's grief may lead him to read evidence through his family's murder; he must not state conclusions the evidence does not support.",
+    "Do not assign Aarav any clinical diagnosis. The source describes only grief, obsession, emotional volatility and a pending psychological fitness review.",
+    "Aarav does not know the Puppeteer's identity and must not name one."
+  ],
+  "schema_version": "1.0"
+}

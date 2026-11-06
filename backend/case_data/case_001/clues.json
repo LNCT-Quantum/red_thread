@@ -1,0 +1,340 @@
+[
+  {
+    "clue_id": "clue_001",
+    "case_id": "case_001",
+    "title": "The Chessboard",
+    "description": "A chessboard sits between two chairs in the study. There are 15 pieces on the board instead of 16: the black king is missing, and the victim's right hand holds a white piece. The position suggests the victim was playing someone who understood advanced chess.",
+    "clue_type": "physical_evidence",
+    "source": "Victim's study, between the two chairs",
+    "related_fact_ids": [
+      "fact_004",
+      "fact_005",
+      "fact_006"
+    ],
+    "source_entity_id": null,
+    "reliability": 0.9,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_002",
+    "case_id": "case_001",
+    "title": "The Broken Watch",
+    "description": "Rishabh's wristwatch has stopped at 9:17 PM. The watch is damaged internally, so the stopped hands cannot be treated as the time of death.",
+    "clue_type": "physical_evidence",
+    "source": "Victim's wristwatch",
+    "related_fact_ids": [
+      "fact_039",
+      "fact_003"
+    ],
+    "source_entity_id": "victim_001",
+    "reliability": 0.2,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_003",
+    "case_id": "case_001",
+    "title": "The Audio Recording",
+    "description": "A 17-second audio recording recovered from the victim's phone captures two people talking, followed by a clock chiming three times. The speakers have not been identified.",
+    "clue_type": "digital_evidence",
+    "source": "Victim's phone",
+    "related_fact_ids": [
+      "fact_040"
+    ],
+    "source_entity_id": "victim_001",
+    "reliability": 0.85,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_004",
+    "case_id": "case_001",
+    "title": "The Coffee Cups",
+    "description": "Two cups of coffee were found at the scene. Lab tests found traces of poison in one cup; the other is clean. Only one of the cups carries the victim's fingerprints.",
+    "clue_type": "forensic_evidence",
+    "source": "Crime scene and forensic analysis",
+    "related_fact_ids": [
+      "fact_036",
+      "fact_037"
+    ],
+    "source_entity_id": null,
+    "reliability": 0.9,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_005",
+    "case_id": "case_001",
+    "title": "The Elevator Footage",
+    "description": "Building cameras show three people entering the apartment floor that evening. One person's face is never captured.",
+    "clue_type": "digital_evidence",
+    "source": "Blackwood Residency security cameras",
+    "related_fact_ids": [
+      "fact_038"
+    ],
+    "source_entity_id": null,
+    "reliability": 0.9,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_006",
+    "case_id": "case_001",
+    "title": "The Blind Woman's Statement",
+    "description": "Anaya says she heard the victim arguing with someone at 9:40 PM. She says she recognised the other person's footsteps as belonging to someone she knows, but has not said who.",
+    "clue_type": "witness_statement",
+    "source": "Interview with Anaya Kapoor",
+    "related_fact_ids": [
+      "fact_003",
+      "fact_020",
+      "fact_022"
+    ],
+    "source_entity_id": "suspect_001",
+    "reliability": 0.5,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_007",
+    "case_id": "case_001",
+    "title": "The Missing Research File",
+    "description": "A confidential document titled Project Echo is missing from the victim's computer. Access logs show it was last opened about three hours before his death. It is not known whether the file was removed, copied or destroyed.",
+    "clue_type": "digital_evidence",
+    "source": "Victim's computer access logs",
+    "related_fact_ids": [
+      "fact_014",
+      "fact_015",
+      "fact_016"
+    ],
+    "source_entity_id": "victim_001",
+    "reliability": 0.8,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_008",
+    "case_id": "case_001",
+    "title": "The Photograph",
+    "description": "A photograph hidden inside the victim's desk shows Rishabh, Anaya, Dr. Nisha Verma and a man no one has identified, standing together. It was taken seven years ago.",
+    "clue_type": "physical_evidence",
+    "source": "Inside the victim's desk",
+    "related_fact_ids": [
+      "fact_035"
+    ],
+    "source_entity_id": "victim_001",
+    "reliability": 0.9,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_009",
+    "case_id": "case_001",
+    "title": "The Unsent Message",
+    "description": "A message in the victim's drafts reads: \"I know what happened to Tara. He wasn't alone that night.\" It was never sent.",
+    "clue_type": "digital_evidence",
+    "source": "Victim's message drafts",
+    "related_fact_ids": [
+      "fact_013",
+      "fact_012"
+    ],
+    "source_entity_id": "victim_001",
+    "reliability": 0.8,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_010",
+    "case_id": "case_001",
+    "title": "The Red Thread",
+    "description": "A small red thread was found beneath the victim's fingernail. It does not match his own clothing or the visible clothing of the three suspects.",
+    "clue_type": "forensic_evidence",
+    "source": "Forensic examination of the victim",
+    "related_fact_ids": [
+      "fact_041"
+    ],
+    "source_entity_id": "victim_001",
+    "reliability": 0.6,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_011",
+    "case_id": "case_001",
+    "title": "The Medical Examiner's Findings",
+    "description": "The medical examiner concludes that Rishabh Malhotra died of poisoning and estimates that death occurred between 9:00 PM and 10:30 PM. This is an estimate, not a confirmed time.",
+    "clue_type": "forensic_evidence",
+    "source": "Medical examiner's report",
+    "related_fact_ids": [
+      "fact_002",
+      "fact_003"
+    ],
+    "source_entity_id": "victim_001",
+    "reliability": 0.8,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_012",
+    "case_id": "case_001",
+    "title": "The Killer's Note",
+    "description": "A handwritten note lies on the table, addressed to \"Detective\": \"you always believed that understanding people meant knowing what they would do next. Let's see if you understand what happened yesterday.\" Below it is the handwritten number 03. Aarav recognises the handwriting as that of the killer who murdered his family.",
+    "clue_type": "document",
+    "source": "Table in the victim's study",
+    "related_fact_ids": [
+      "fact_007",
+      "fact_008"
+    ],
+    "source_entity_id": null,
+    "reliability": 0.95,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_013",
+    "case_id": "case_001",
+    "title": "The Puppeteer's Challenge",
+    "description": "A message addressed to Aarav reads: \"Three people. Three days. Three mistakes you made. Find me before the third day ends, or you'll watch history repeat itself.\"",
+    "clue_type": "document",
+    "source": "Message addressed to Detective Aarav Mehra",
+    "related_fact_ids": [
+      "fact_009",
+      "fact_008"
+    ],
+    "source_entity_id": null,
+    "reliability": 0.95,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_014",
+    "case_id": "case_001",
+    "title": "Fingerprints on the Chessboard",
+    "description": "Fingerprints recovered from the chessboard are matched to Kabir Malhotra. The prints alone do not show when they were left.",
+    "clue_type": "forensic_evidence",
+    "source": "Fingerprint analysis of the chessboard",
+    "related_fact_ids": [
+      "fact_027",
+      "fact_026"
+    ],
+    "source_entity_id": "suspect_002",
+    "reliability": 0.9,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_015",
+    "case_id": "case_001",
+    "title": "The Large Transfer",
+    "description": "Financial records show that Kabir recently transferred a large sum of money to an account that has not been identified.",
+    "clue_type": "financial_record",
+    "source": "Financial records",
+    "related_fact_ids": [
+      "fact_028"
+    ],
+    "source_entity_id": "suspect_002",
+    "reliability": 0.85,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_016",
+    "case_id": "case_001",
+    "title": "Kabir's Changing Account",
+    "description": "Kabir's first account of his last conversation with Rishabh does not match the version he gave later.",
+    "clue_type": "witness_statement",
+    "source": "Interviews with Kabir Malhotra",
+    "related_fact_ids": [
+      "fact_029"
+    ],
+    "source_entity_id": "suspect_002",
+    "reliability": 0.8,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_017",
+    "case_id": "case_001",
+    "title": "The Inheritance Dispute",
+    "description": "Kabir and Rishabh were in a bitter financial dispute over their family's inheritance. Kabir has access to Rishabh's apartment.",
+    "clue_type": "circumstantial_evidence",
+    "source": "Family and financial background",
+    "related_fact_ids": [
+      "fact_025",
+      "fact_026"
+    ],
+    "source_entity_id": "suspect_002",
+    "reliability": 0.8,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_018",
+    "case_id": "case_001",
+    "title": "The Anonymous Letters",
+    "description": "Anaya says she has been receiving anonymous letters for six months. Who is sending them, and whether they relate to this case, is unknown.",
+    "clue_type": "witness_statement",
+    "source": "Interview with Anaya Kapoor",
+    "related_fact_ids": [
+      "fact_023"
+    ],
+    "source_entity_id": "suspect_001",
+    "reliability": 0.7,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_019",
+    "case_id": "case_001",
+    "title": "Anaya's Knowledge of the Apartment",
+    "description": "Anaya describes details of the layout of Rishabh's apartment, even though she says she has never been there. How she learned the layout is unknown.",
+    "clue_type": "circumstantial_evidence",
+    "source": "Interview with Anaya Kapoor",
+    "related_fact_ids": [
+      "fact_022"
+    ],
+    "source_entity_id": "suspect_001",
+    "reliability": 0.7,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_020",
+    "case_id": "case_001",
+    "title": "Nisha's Evening Visit",
+    "description": "Dr. Nisha Verma was at Rishabh's apartment on the evening he died. The purpose and length of her visit have not been established.",
+    "clue_type": "circumstantial_evidence",
+    "source": "Evening visit to the victim's apartment",
+    "related_fact_ids": [
+      "fact_031"
+    ],
+    "source_entity_id": "suspect_003",
+    "reliability": 0.8,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_021",
+    "case_id": "case_001",
+    "title": "Access to Restricted Medications",
+    "description": "Records show that Dr. Nisha Verma has access to restricted medications. Nothing yet links this access to the poison used.",
+    "clue_type": "document",
+    "source": "Records of restricted medication access",
+    "related_fact_ids": [
+      "fact_032",
+      "fact_002"
+    ],
+    "source_entity_id": "suspect_003",
+    "reliability": 0.85,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_022",
+    "case_id": "case_001",
+    "title": "The Vanished Research Records",
+    "description": "Dr. Nisha Verma's records from her research with Rishabh have disappeared. Whether they were lost, removed or destroyed is unknown.",
+    "clue_type": "document",
+    "source": "Interview and records review",
+    "related_fact_ids": [
+      "fact_033",
+      "fact_016"
+    ],
+    "source_entity_id": "suspect_003",
+    "reliability": 0.7,
+    "schema_version": "1.0"
+  },
+  {
+    "clue_id": "clue_023",
+    "case_id": "case_001",
+    "title": "What Nisha Knows About Aarav's Family",
+    "description": "During questioning, Dr. Nisha Verma refers to details of the murder of Aarav's family that were never made public. How she learned them is unknown.",
+    "clue_type": "witness_statement",
+    "source": "Interview with Dr. Nisha Verma",
+    "related_fact_ids": [
+      "fact_034"
+    ],
+    "source_entity_id": "suspect_003",
+    "reliability": 0.75,
+    "schema_version": "1.0"
+  }
+]
