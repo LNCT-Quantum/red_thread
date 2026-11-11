@@ -4,7 +4,7 @@ import threading
 import uuid
 from dataclasses import dataclass, replace
 
-from shared.contracts.dialogue import DialogueMessage, DialogueRequest
+from shared.contracts.dialogue import DialogueDraft, DialogueMessage, DialogueRequest
 from shared.contracts.errors import (
     ContractValidationError,
     ResourceNotFoundError,
@@ -12,7 +12,7 @@ from shared.contracts.errors import (
 )
 from shared.contracts.game_state import GameState
 from src.case_engine import CaseEngine
-from src.progression import ProgressionGate
+from src.progression import PreparedDialogueTurn, ProgressionGate, reaction_marker
 
 from .state_repository import GameSession, GameStateRepository
 
@@ -238,6 +238,93 @@ class GameStateManager:
             presented_clue_ids=presented_clue_ids,
             dialogue_history=history,
         )
+
+    def prepare_dialogue_turn(
+        self,
+        game_id: str,
+        *,
+        request_id: str,
+        suspect_id: str,
+        player_message: str,
+        dialogue_session_id: str,
+        presented_clue_ids: tuple[str, ...] = (),
+        max_turns: int = DEFAULT_RECENT_TURNS,
+    ) -> PreparedDialogueTurn:
+        """Like :meth:`build_dialogue_request`, plus the evidence reactions that
+        apply to the clues presented to this suspect. Nothing is stored."""
+        if self._progression is None:
+            raise StateConflictError(
+                "A Progression Gate is required to prepare dialogue turns.",
+                code="PROGRESSION_UNAVAILABLE",
+            )
+        state = self.get_game_state(game_id)
+        history = self.get_recent_dialogue_history(game_id, dialogue_session_id, max_turns)
+        return self._progression.authorization.prepare_dialogue_turn(
+            state,
+            request_id=request_id,
+            suspect_id=suspect_id,
+            player_message=player_message,
+            presented_clue_ids=presented_clue_ids,
+            dialogue_history=history,
+        )
+
+    def complete_dialogue_turn(
+        self,
+        game_id: str,
+        turn: PreparedDialogueTurn,
+        draft: DialogueDraft,
+        expected_revision: int | None = None,
+    ) -> StateChange:
+        """Finish a turn after the LLM draft is received.
+
+        The draft must answer the prepared request and cite only its authorized
+        facts and presented clues. The reactions are recomputed from stored state
+        and must match the prepared ones, so they cannot be forged or replayed.
+        Delivered one-time reactions are recorded in one revision bump; if there
+        is nothing to record the call changes nothing.
+        """
+        if self._progression is None:
+            raise StateConflictError(
+                "A Progression Gate is required to complete dialogue turns.",
+                code="PROGRESSION_UNAVAILABLE",
+            )
+        if not isinstance(turn, PreparedDialogueTurn):
+            raise ContractValidationError(
+                "'turn' must be a PreparedDialogueTurn.", code="DIALOGUE_TURN_INVALID"
+            )
+        if not isinstance(draft, DialogueDraft):
+            raise ContractValidationError(
+                "'draft' must be a DialogueDraft.", code="DIALOGUE_DRAFT_INVALID"
+            )
+        authorization = self._progression.authorization
+        with self._lock:
+            session = self._load(game_id, expected_revision)
+            state = session.state
+            self._require_active(state)
+            draft.validate_against_request(turn.request)
+            authorization.validate_dialogue_request(state, turn.request)
+            expected = authorization.resolve_evidence_reactions(
+                state, turn.request.suspect_id, turn.request.presented_clue_ids
+            )
+            if expected != turn.reactions:
+                raise StateConflictError(
+                    "Evidence reactions no longer match the game state.",
+                    code="DIALOGUE_TURN_STALE",
+                )
+            markers = tuple(
+                reaction_marker(item.suspect_id, item.clue_id)
+                for item in expected
+                if not item.repeatable and not item.is_repeat
+            )
+            if not markers:
+                return StateChange(state, False)
+            new_state = replace(
+                state,
+                completed_objective_ids=state.completed_objective_ids + markers,
+                revision=state.revision + 1,
+            )
+            self._commit(GameSession(new_state, session.dialogue_history), state.revision)
+            return StateChange(new_state, True)
 
     # ------------------------------------------------------------- investigation
 

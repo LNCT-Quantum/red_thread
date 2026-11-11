@@ -1,0 +1,63 @@
+{
+  "stages": [
+    {
+      "stage_id": "stage_1",
+      "title": "Initial Investigation",
+      "description": "Aarav examines the study and begins questioning Anaya Kapoor, Kabir Malhotra and Dr. Nisha Verma. Only background facts and the evidence found at the scene are available."
+    },
+    {
+      "stage_id": "stage_2",
+      "title": "Scene and Forensic Review",
+      "description": "The chessboard, the coffee cups and the note have been examined. The phone recording, building footage, medical examiner's findings, red thread, photograph, Project Echo file and unsent message become obtainable.",
+      "required_clue_ids": ["clue_001", "clue_004", "clue_012"],
+      "unlocks_clue_ids": [
+        "clue_003",
+        "clue_005",
+        "clue_007",
+        "clue_008",
+        "clue_009",
+        "clue_010",
+        "clue_011"
+      ]
+    },
+    {
+      "stage_id": "stage_3",
+      "title": "Suspect Evidence",
+      "description": "Every suspect has been interviewed and the forensic picture is in place. Evidence tied to individual suspects becomes obtainable.",
+      "required_clue_ids": ["clue_005", "clue_007", "clue_011"],
+      "required_interviewed_suspect_ids": ["suspect_001", "suspect_002", "suspect_003"],
+      "unlocks_clue_ids": [
+        "clue_014",
+        "clue_015",
+        "clue_017",
+        "clue_019",
+        "clue_020",
+        "clue_021",
+        "clue_022"
+      ],
+      "unlocks_fact_ids": ["fact_027", "fact_035"]
+    },
+    {
+      "stage_id": "stage_4",
+      "title": "Suspect Confrontation",
+      "description": "Evidence against each suspect is in hand: Kabir's fingerprints, Anaya's knowledge of the apartment and Dr. Verma's evening visit. The suspects can now be confronted, and what each is concealing becomes available to their dialogue.",
+      "required_clue_ids": ["clue_014", "clue_019", "clue_020"],
+      "unlocks_fact_ids": [
+        "fact_017",
+        "fact_018",
+        "fact_019",
+        "fact_022",
+        "fact_028",
+        "fact_029",
+        "fact_034"
+      ]
+    },
+    {
+      "stage_id": "stage_5",
+      "title": "Final Investigation",
+      "description": "The unsent message, the photograph, the red thread and Dr. Verma's unexplained knowledge are all in hand. The facts about the Puppeteer and the larger mystery become available.",
+      "required_clue_ids": ["clue_008", "clue_009", "clue_010", "clue_023"],
+      "unlocks_fact_ids": ["fact_008", "fact_012", "fact_013", "fact_042", "fact_043"]
+    }
+  ]
+}
