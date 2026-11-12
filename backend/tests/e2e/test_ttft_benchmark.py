@@ -6,7 +6,7 @@ import statistics
 # ---------------------------------------------------------
 # 1. CONFIGURATION 
 # ---------------------------------------------------------
-MODEL_NAME = "qwen3:1.7b"
+MODEL_NAME = "qwen2.5:3b"
 NUM_RUNS = 10  # 10 times test should run and then find  p50 aur p95
 
 # ---------------------------------------------------------
@@ -31,7 +31,7 @@ def test_ttft_warm_model_benchmark():
                 model=MODEL_NAME,
                 messages=messages,
                 stream=True,
-                options={"think": False} 
+                # options={"think": False} 
             )
             
             # 3. Stream se pehla token get
