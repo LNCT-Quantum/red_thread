@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,7 @@ from src.case_engine.loader import DEFAULT_DATA_ROOT
 
 __all__ = [
     "STAGE_MARKER_PREFIX",
+    "RESERVED_OBJECTIVE_PREFIXES",
     "PROGRESSION_FILE",
     "StageRule",
     "ProgressionRules",
@@ -31,6 +33,12 @@ __all__ = [
 #: unlocked stage. The initial stage is implicit and is never recorded.
 STAGE_MARKER_PREFIX = "stage:"
 
+#: Prefixes of ``completed_objective_ids`` entries written only by the backend
+#: (stage unlocks and delivered one-time evidence reactions).
+RESERVED_OBJECTIVE_PREFIXES: tuple[str, ...] = (STAGE_MARKER_PREFIX, "reaction:")
+
+_LOGGER = logging.getLogger(__name__)
+
 #: Optional per-case file that overrides the derived default rules.
 PROGRESSION_FILE = "progression.json"
 
@@ -38,6 +46,7 @@ _STAGE_KEYS: frozenset[str] = frozenset(
     {
         "stage_id",
         "title",
+        "description",
         "required_clue_ids",
         "required_interviewed_suspect_ids",
         "required_objective_ids",
@@ -71,20 +80,25 @@ class StageRule:
     required_objective_ids: tuple[str, ...] = ()
     unlocks_clue_ids: tuple[str, ...] = ()
     unlocks_fact_ids: tuple[str, ...] = ()
+    description: str = ""
     schema_version: str = "1.0"
 
     def __post_init__(self) -> None:
         for name in ("stage_id", "title", "schema_version"):
             _require_string(name, getattr(self, name))
+        if not isinstance(self.description, str):
+            raise TypeError(
+                f"'description' must be a str, got {type(self.description).__name__}."
+            )
         for name in _TUPLE_FIELDS:
             _require_id_tuple(name, getattr(self, name))
         if ":" in self.stage_id:
             raise ValueError("'stage_id' must not contain ':'.")
         for objective_id in self.required_objective_ids:
-            if objective_id.startswith(STAGE_MARKER_PREFIX):
+            if objective_id.startswith(RESERVED_OBJECTIVE_PREFIXES):
                 raise ValueError(
-                    "'required_objective_ids' must not use the reserved "
-                    f"prefix {STAGE_MARKER_PREFIX!r}: {objective_id!r}."
+                    "'required_objective_ids' must not use a reserved "
+                    f"prefix {RESERVED_OBJECTIVE_PREFIXES!r}: {objective_id!r}."
                 )
 
     @property
@@ -288,6 +302,11 @@ def load_progression_rules(
     root = Path(data_root) if data_root is not None else DEFAULT_DATA_ROOT
     path = root / engine.case_id / PROGRESSION_FILE
     if not path.is_file():
+        _LOGGER.warning(
+            "No %s for case %r; using the generic default progression rules.",
+            PROGRESSION_FILE,
+            engine.case_id,
+        )
         rules = default_rules(engine)
         rules.validate_against(engine)
         return rules

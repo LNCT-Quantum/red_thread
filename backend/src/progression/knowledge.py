@@ -11,6 +11,8 @@ from shared.contracts.errors import ContractValidationError, ResourceNotFoundErr
 from src.case_engine import CaseEngine
 from src.case_engine.loader import DEFAULT_DATA_ROOT
 
+from .evidence_reactions import EvidenceReaction
+
 __all__ = ["NpcKnowledge", "NPC_KNOWLEDGE_FILE", "load_npc_knowledge"]
 
 NPC_KNOWLEDGE_FILE = "npc_knowledge.json"
@@ -22,6 +24,7 @@ _ALLOWED_KEYS: frozenset[str] = frozenset(
         "unknown_fact_ids",
         "secret_fact_ids",
         "knowledge_notes",
+        "evidence_reactions",
         "schema_version",
     }
 )
@@ -36,6 +39,7 @@ class NpcKnowledge:
     unknown_fact_ids: tuple[str, ...]
     secret_fact_ids: tuple[str, ...]
     knowledge_notes: str = ""
+    evidence_reactions: tuple[EvidenceReaction, ...] = ()
     schema_version: str = "1.0"
 
     def __post_init__(self) -> None:
@@ -48,6 +52,17 @@ class NpcKnowledge:
             )
         for name in ("known_fact_ids", "unknown_fact_ids", "secret_fact_ids"):
             _require_id_tuple(name, getattr(self, name))
+        if not isinstance(self.evidence_reactions, tuple):
+            raise TypeError(
+                "'evidence_reactions' must be a tuple, "
+                f"got {type(self.evidence_reactions).__name__}."
+            )
+        for index, reaction in enumerate(self.evidence_reactions):
+            if not isinstance(reaction, EvidenceReaction):
+                raise TypeError(
+                    f"'evidence_reactions[{index}]' must be an EvidenceReaction, "
+                    f"got {type(reaction).__name__}."
+                )
 
         known = set(self.known_fact_ids)
         unknown = set(self.unknown_fact_ids)
@@ -148,6 +163,13 @@ def _build_entry(
     for key, value in record.items():
         kwargs[key] = tuple(value) if isinstance(value, list) else value
     try:
+        reactions = record.get("evidence_reactions", [])
+        if not isinstance(reactions, list):
+            raise TypeError("'evidence_reactions' must be a JSON array.")
+        kwargs["evidence_reactions"] = tuple(
+            EvidenceReaction.from_dict(item, f"{location}.evidence_reactions[{i}]")
+            for i, item in enumerate(reactions)
+        )
         return NpcKnowledge(**kwargs)
     except (TypeError, ValueError) as exc:
         problems.append(f"{location}: {exc}")

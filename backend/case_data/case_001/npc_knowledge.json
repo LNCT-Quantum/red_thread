@@ -22,7 +22,69 @@
       "fact_019",
       "fact_022"
     ],
-    "knowledge_notes": "Anaya admits knowing Rishabh (she says she last met him two weeks ago) and publicly known details of the murder of Aarav's family. She conceals her past romance with the man who became the Puppeteer and how she learned the layout of the apartment she claims never to have visited. She says she knows who the Puppeteer is; the source does not establish that she knows him by that identity or can name him, so she must not name anyone. Her statement that she heard an argument at 9:40 PM and recognised footsteps is her own testimony, not a canonical fact. Her sensory knowledge and its limits are not defined in the source. Facts not listed are unassigned and must be treated as not known to her."
+    "knowledge_notes": "Anaya admits knowing Rishabh (she says she last met him two weeks ago) and publicly known details of the murder of Aarav's family. She conceals her past romance with the man who became the Puppeteer and how she learned the layout of the apartment she claims never to have visited. She says she knows who the Puppeteer is; the source does not establish that she knows him by that identity or can name him, so she must not name anyone. Her statement that she heard an argument at 9:40 PM and recognised footsteps is her own testimony, not a canonical fact. Her sensory knowledge and its limits are not defined in the source. Facts not listed are unassigned and must be treated as not known to her.",
+    "evidence_reactions": [
+      {
+        "clue_id": "clue_006",
+        "reaction_type": "acknowledge",
+        "emotional_response": "Guarded and composed.",
+        "reveals_fact_ids": [
+          "fact_020"
+        ],
+        "conceals_fact_ids": [
+          "fact_022"
+        ],
+        "stated_position": "Says she heard the victim arguing with someone at 9:40 PM and recognised the other person's footsteps.",
+        "limits": "This is her own testimony, not a canonical fact. Her sensory knowledge beyond this is not defined.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_018",
+        "reaction_type": "acknowledge",
+        "emotional_response": "Guarded and composed.",
+        "reveals_fact_ids": [
+          "fact_023"
+        ],
+        "conceals_fact_ids": [],
+        "stated_position": "Says she has received anonymous letters for six months.",
+        "limits": "Who sends the letters, and whether they relate to the case, is unknown; she must not name anyone.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_019",
+        "reaction_type": "deflect",
+        "emotional_response": "Guarded; reluctant to discuss her past.",
+        "reveals_fact_ids": [],
+        "conceals_fact_ids": [
+          "fact_022"
+        ],
+        "stated_position": "Maintains that she has never been to Rishabh's apartment.",
+        "limits": "How she learned the layout is not established and must not be invented.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "required_stage_id": "stage_4",
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_008",
+        "reaction_type": "deflect",
+        "emotional_response": "Guarded; reluctant to discuss her past.",
+        "reveals_fact_ids": [],
+        "conceals_fact_ids": [
+          "fact_019"
+        ],
+        "stated_position": "Declines to discuss her past.",
+        "limits": "She must not name the unidentified man in the photograph or anyone else.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "required_stage_id": "stage_4",
+        "repeatable": true
+      }
+    ]
   },
   {
     "suspect_id": "suspect_002",
@@ -49,7 +111,98 @@
       "fact_028",
       "fact_029"
     ],
-    "knowledge_notes": "Kabir knows the family inheritance dispute, his access to the apartment, and that Rishabh ran a confidential research project (he secretly financed part of it). He conceals the financing, the transfer to an unidentified account (its purpose is not defined in the source), and the truth about his last conversation with Rishabh. Why his fingerprints are on the chessboard, and whether his business-dinner alibi is true, are not established in the source and must not be invented. Facts not listed are unassigned and must be treated as not known to him."
+    "knowledge_notes": "Kabir knows the family inheritance dispute, his access to the apartment, and that Rishabh ran a confidential research project (he secretly financed part of it). He conceals the financing, the transfer to an unidentified account (its purpose is not defined in the source), and the truth about his last conversation with Rishabh. Why his fingerprints are on the chessboard, and whether his business-dinner alibi is true, are not established in the source and must not be invented. Facts not listed are unassigned and must be treated as not known to him.",
+    "evidence_reactions": [
+      {
+        "clue_id": "clue_017",
+        "reaction_type": "acknowledge",
+        "emotional_response": "Defensive, blunt and resentful.",
+        "reveals_fact_ids": [
+          "fact_025",
+          "fact_026"
+        ],
+        "conceals_fact_ids": [],
+        "stated_position": "Acknowledges the inheritance dispute and his access to the apartment.",
+        "limits": "",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_014",
+        "reaction_type": "deflect",
+        "emotional_response": "Defensive and blunt.",
+        "reveals_fact_ids": [
+          "fact_026"
+        ],
+        "conceals_fact_ids": [],
+        "stated_position": "Points to his access to the apartment and offers no explanation of when or why his fingerprints were left.",
+        "limits": "Why his fingerprints are on the chessboard is not established and must not be invented.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_007",
+        "reaction_type": "acknowledge",
+        "emotional_response": "Defensive.",
+        "reveals_fact_ids": [
+          "fact_016"
+        ],
+        "conceals_fact_ids": [
+          "fact_017"
+        ],
+        "stated_position": "Knows Rishabh ran a confidential research project.",
+        "limits": "He conceals that he secretly financed part of it.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_015",
+        "reaction_type": "deflect",
+        "emotional_response": "Defensive and resentful.",
+        "reveals_fact_ids": [
+          "fact_028"
+        ],
+        "conceals_fact_ids": [
+          "fact_017"
+        ],
+        "stated_position": "Cannot deny that the transfer was made.",
+        "limits": "The purpose of the transfer is not defined and must not be invented.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "required_stage_id": "stage_4",
+        "repeatable": false
+      },
+      {
+        "clue_id": "clue_016",
+        "reaction_type": "deflect",
+        "emotional_response": "Defensive and blunt.",
+        "reveals_fact_ids": [
+          "fact_029"
+        ],
+        "conceals_fact_ids": [],
+        "stated_position": "Acknowledges that his accounts of the last conversation differ.",
+        "limits": "What was actually said in that conversation is not established and must not be invented.",
+        "statement_change": "acknowledges_discrepancy",
+        "alters_alibi": false,
+        "required_stage_id": "stage_4",
+        "repeatable": false
+      },
+      {
+        "clue_id": "clue_003",
+        "reaction_type": "no_recognition",
+        "emotional_response": "Blunt.",
+        "reveals_fact_ids": [],
+        "conceals_fact_ids": [],
+        "stated_position": "Offers no knowledge of the recording.",
+        "limits": "The speakers on the recording are unidentified in the case; Kabir must not identify them.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      }
+    ]
   },
   {
     "suspect_id": "suspect_003",
@@ -74,6 +227,82 @@
       "fact_018",
       "fact_034"
     ],
-    "knowledge_notes": "Nisha knows her own research with Rishabh, her visit on the evening of his death, her access to restricted medications, and that her research records have disappeared. She conceals that she helped develop the profiling techniques the Puppeteer now uses and how she learned non-public details of the murder of Aarav's family (the source does not say how). Her claim that Rishabh was afraid of someone but never told her who is her own testimony, not a canonical fact. The purpose and duration of her visit are not established in the source. Facts not listed are unassigned and must be treated as not known to her."
+    "knowledge_notes": "Nisha knows her own research with Rishabh, her visit on the evening of his death, her access to restricted medications, and that her research records have disappeared. She conceals that she helped develop the profiling techniques the Puppeteer now uses and how she learned non-public details of the murder of Aarav's family (the source does not say how). Her claim that Rishabh was afraid of someone but never told her who is her own testimony, not a canonical fact. The purpose and duration of her visit are not established in the source. Facts not listed are unassigned and must be treated as not known to her.",
+    "evidence_reactions": [
+      {
+        "clue_id": "clue_020",
+        "reaction_type": "acknowledge",
+        "emotional_response": "Controlled and precise.",
+        "reveals_fact_ids": [
+          "fact_031"
+        ],
+        "conceals_fact_ids": [],
+        "stated_position": "Acknowledges visiting Rishabh at his apartment on the evening of his death.",
+        "limits": "The purpose and duration of the visit are not established and must not be invented.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_021",
+        "reaction_type": "acknowledge",
+        "emotional_response": "Controlled and precise.",
+        "reveals_fact_ids": [
+          "fact_032"
+        ],
+        "conceals_fact_ids": [],
+        "stated_position": "Acknowledges that she has access to restricted medications.",
+        "limits": "Nothing yet links this access to the poison used.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_022",
+        "reaction_type": "acknowledge",
+        "emotional_response": "Analytical and controlled.",
+        "reveals_fact_ids": [
+          "fact_033"
+        ],
+        "conceals_fact_ids": [],
+        "stated_position": "Acknowledges that her research records have disappeared.",
+        "limits": "Whether the records were lost, removed or destroyed is unknown.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_007",
+        "reaction_type": "acknowledge",
+        "emotional_response": "Analytical and controlled.",
+        "reveals_fact_ids": [
+          "fact_016"
+        ],
+        "conceals_fact_ids": [
+          "fact_018"
+        ],
+        "stated_position": "Confirms that she and Rishabh worked together on a confidential research project.",
+        "limits": "",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "repeatable": true
+      },
+      {
+        "clue_id": "clue_023",
+        "reaction_type": "conceal",
+        "emotional_response": "Controlled and professionally guarded.",
+        "reveals_fact_ids": [],
+        "conceals_fact_ids": [
+          "fact_034",
+          "fact_018"
+        ],
+        "stated_position": "",
+        "limits": "How she learned the non-public details is not established and must not be invented.",
+        "statement_change": "none",
+        "alters_alibi": false,
+        "required_stage_id": "stage_4",
+        "repeatable": true
+      }
+    ]
   }
 ]
