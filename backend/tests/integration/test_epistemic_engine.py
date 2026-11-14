@@ -1,7 +1,6 @@
 import pytest
 
 from shared.contracts.dialogue import DialogueRequest
-from shared.contracts.errors import ContractValidationError
 from src.progression.epistemic_models import BeliefStatus, NpcBelief
 
 from shared.contracts.game_state import GameState
@@ -10,6 +9,7 @@ from src.progression.authorization import AuthorizationService
 from src.progression.epistemic_engine import EpistemicEngine
 from src.progression.knowledge import load_npc_knowledge
 from src.progression.progression_rules import load_progression_rules
+from shared.contracts.errors import ContractValidationError, ResourceNotFoundError
 
 @pytest.fixture
 def setup_engine():
@@ -319,3 +319,36 @@ def test_unlocked_filter_blocks_secret_fact_before_stage_4(
 
     assert "fact_028" not in knowledge.available_fact_ids
     assert "fact_028" not in knowledge.revealable_fact_ids
+
+def test_engine_rejects_unknown_suspect_id(setup_engine):
+    # Note: Verify that passing a fake suspect ID raises the correct error.
+    epistemic, state = setup_engine
+    with pytest.raises(ResourceNotFoundError, match="Unknown suspect id"):
+        epistemic.get_authorized_knowledge(state, "suspect_999")
+
+def test_engine_rejects_unknown_fact_id(setup_engine):
+    #  Note: Verify that checking a fake fact ID raises the correct error.
+    epistemic, state = setup_engine
+    with pytest.raises(ResourceNotFoundError, match="Unknown fact id"):
+        epistemic.can_npc_reveal(state, "suspect_001", "fact_999")
+
+def test_cannot_retrieve_locked_evidence(setup_engine):
+    # Verify that a player cannot discover a clue from a future stage.
+    from shared.contracts.errors import PermissionDeniedError
+    epistemic, initial_state = setup_engine
+    
+    # clue_005 is unlocked in stage_2. Trying to discover it at stage_1 should fail.
+    with pytest.raises(PermissionDeniedError, match="Clue is not unlocked yet"):
+        epistemic._authorization.require_clue_discoverable(initial_state, "clue_005")
+
+def test_npc_cannot_access_another_npcs_secrets(setup_engine):
+    # Verify cross-NPC data leakage is prevented.
+    epistemic, _ = setup_engine
+    state = make_stage_4_state()
+    
+    # Kabir (suspect_002) has secret fact_017. 
+    # Anaya (suspect_001) should NOT see it in her available facts.
+    anaya_knowledge = epistemic.get_authorized_knowledge(
+        state, "suspect_001", presented_clue_ids=("clue_001",)
+    )
+    assert "fact_017" not in anaya_knowledge.available_fact_ids
