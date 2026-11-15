@@ -1,79 +1,55 @@
-import logging
+# File: backend/tests/unit/test_fallback_and_logging.py
 import pytest
-from backend.shared.contracts.dialogue import DialogueRequest, DialogueDraft, GenerationMetrics
-from backend.shared.contracts.errors import ContractValidationError
-from backend.shared.contracts.api import APIResponse, APIError
+import logging
+from unittest.mock import MagicMock
 
-# ---------------------------------------------------------
-# 1. FALLBACK HANDLER (later module 12)
-# ---------------------------------------------------------
-class FallbackHandler:
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
+from shared.contracts.dialogue import DialogueRequest, GenerationMetrics
+from src.dialogue_generator.response_validator import fallback_draft, FALLBACK_LINES
+from src.dialogue_generator.pipeline import DialoguePipeline
+from src.dialogue_generator.llm_adapter import LLMError
 
-    def generate_fallback_response(self, request: DialogueRequest, error: Exception) -> APIResponse:
-        # 1. Error ko log karo (caplog isko pakdega)
-        self.logger.error(f"Validation failed for request {request.request_id}. Error: {error}")
-        
-        # 2. Safe fallback response create
-        fallback_draft = DialogueDraft(
-            request_id=request.request_id,
-            suspect_id=request.suspect_id,
-            content="I refuse to speak further without my solicitor.", # In-character safe line
-            cited_fact_ids=(),
-            cited_clue_ids=(),
-            metrics=GenerationMetrics(
-                model_id="fallback",
-                time_to_first_token_ms=0.0,
-                generation_time_ms=0.0,
-                prompt_tokens=0
-            )
-        )
-        
-        # 3. APIResponse mein wrap karke return karo
-        return APIResponse(
-            request_id=request.request_id,
-            success=False,
-            data=None,
-            error=APIError(
-                code="VALIDATION_FAILED",
-                message="LLM response was invalid. Fallback used.",
-                details=(str(error),)
-            )
-        )
-
-# ---------------------------------------------------------
-# 2. FIXTURES
-# ---------------------------------------------------------
-@pytest.fixture
-def sample_request():
-    return DialogueRequest(
-        request_id="req_123",
-        case_id="case_001",
-        suspect_id="suspect_001",
-        player_message="Where were you?",
-        authorized_fact_ids=("fact_001",)
+def test_fallback_draft_generates_safe_reply():
+    """
+    QA Note: Verify that the fallback_draft returns a safe reply.
+    """
+    request = DialogueRequest(
+        request_id="req_fallback_001", case_id="case_001", suspect_id="suspect_001", 
+        player_message="Tell me the secret.", authorized_fact_ids=(), presented_clue_ids=()
     )
+    
+    draft = fallback_draft(request)
+    
+    # Verify the draft content is one of the predefined safe fallback lines
+    assert draft.content in FALLBACK_LINES
+    assert len(draft.cited_fact_ids) == 0
+    assert len(draft.cited_clue_ids) == 0
+    assert draft.metrics.model_id == "fallback"
 
-# ---------------------------------------------------------
-# 3. TESTS (Fallback & Logging)
-# ---------------------------------------------------------
-
-def test_fallback_triggers_and_logs_error(caplog, sample_request):
-    # caplog ko ERROR level par set karo taaki hum logs pakad sakein
-    caplog.set_level(logging.ERROR)
+def test_pipeline_logs_warning_on_fallback(caplog):
+    """
+    QA Note: Verify that when the LLM fails, the DialoguePipeline triggers fallback AND logs it.
+    """
+    caplog.set_level(logging.WARNING)
     
-    handler = FallbackHandler()
-    dummy_error = ContractValidationError("Unauthorized fact cited.", code="DRAFT_UNAUTHORIZED_FACT")
+    # Setup mock engine and failing adapter
+    engine = MagicMock()
+    failing_adapter = MagicMock()
+    failing_adapter.generate.side_effect = LLMError("Simulated LLM connection timeout")
     
-    # Fallback trigger karo
-    response = handler.generate_fallback_response(sample_request, dummy_error)
+    pipeline = DialoguePipeline(engine, adapter=failing_adapter)
     
-    # 1. Verify karo ki response fallback hai
-    assert response.success is False
-    assert response.error is not None
-    assert response.error.code == "VALIDATION_FAILED"
+    # Setup a solid mock turn with string values, not MagicMock
+    turn = MagicMock()
+    turn.request.request_id = "req_timeout_test"
+    turn.request.suspect_id = "suspect_001"
+    turn.request.player_message = "Test message"
     
-    # 2. Verify karo ki log generate hua hai (caplog)
-    assert "Validation failed for request req_123" in caplog.text
-    assert "DRAFT_UNAUTHORIZED_FACT" in caplog.text
+    pipeline.build_context = MagicMock(return_value=MagicMock(hidden_statements=()))
+    
+    # Run pipeline
+    result = pipeline.generate(turn)
+    
+    assert result.is_fallback is True
+    assert result.attempts == 2 
+    assert "dialogue fallback for req_timeout_test" in caplog.text
+    assert "Simulated LLM connection timeout" in caplog.text
