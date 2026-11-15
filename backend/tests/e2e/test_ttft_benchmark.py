@@ -6,7 +6,7 @@ import statistics
 # ---------------------------------------------------------
 # 1. CONFIGURATION 
 # ---------------------------------------------------------
-MODEL_NAME = "qwen2.5:3b"
+MODEL_NAME = "qwen2.5:3b-instruct-q4_K_M"
 NUM_RUNS = 10  # 10 times test should run and then find  p50 aur p95
 
 # ---------------------------------------------------------
