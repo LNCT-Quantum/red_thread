@@ -1,11 +1,14 @@
+// Case-level metadata used by the dashboard, header, and case-selection screen.
 export const caseFile = {
   id: "CASE 001", title: "The Silent Witness", series: "The Last Three Days",
   victim: "Dr. Rishabh Malhotra", location: "Blackwood Residency · 17th floor",
   summary: "A psychologist is found poisoned beside an unfinished chess game. The Puppeteer has returned with a warning: three people, three days.",
 };
+// Builds deploy-safe URLs for images stored in the public directory.
 const asset = (name) => import.meta.env.BASE_URL + name;
 
 // All dialogue here is authored frontend sample copy, never generated AI or canonically verified testimony.
+// Each suspect contains profile data plus question/answer pairs used by the interview screen.
 export const suspects = [
   { id: "anaya", name: "Anaya Kapoor", role: "Musician · former partner of the killer", portrait: asset("anaya.png"), intro: "I knew Rishabh. That doesn't mean I was there that night.", questions: [
     ["When did you last meet Rishabh?", "I last met Rishabh two weeks ago. That is what I told the investigators."],
@@ -27,6 +30,7 @@ export const suspects = [
   ] },
 ];
 
+// Evidence records are revealed in this array order by the evidence-board discovery action.
 export const clues = [
   { id: "01", name: "The Chessboard", type: "Crime scene", icon: "♞", summary: "15 pieces remain; the black king is missing.", detail: "The victim held a white chess piece. The board's position suggests a skilled player, but it does not prove a real game took place." },
   { id: "02", name: "The Broken Watch", type: "Object", icon: "◷", summary: "The watch stopped at 9:17 PM.", detail: "It is internally damaged. The stopped time cannot be assumed to be the time of death." },
@@ -40,4 +44,5 @@ export const clues = [
   { id: "10", name: "The Red Thread", type: "Forensics", icon: "〰", summary: "Thread beneath the victim's fingernail.", detail: "It matches neither the victim's clothes nor visible clothing of the three suspects. Its origin is unknown." },
 ];
 
+// Clean starting state used when no valid saved browser progress is available.
 export const initialProgress = { found: ["01"], notes: "", interviews: {}, links: [], theory: null };

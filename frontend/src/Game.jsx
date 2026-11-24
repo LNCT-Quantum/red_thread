@@ -1,29 +1,43 @@
 import React, { useState } from "react";
 import { caseFile, clues, suspects } from "./story";
 
+// Sidebar configuration: each entry maps a section ID to its visible label and icon.
 const menu = [
   ["overview", "Dashboard", "⌂"], ["suspects", "NPCs", "♙"],
   ["evidence", "Evidence", "◇"], ["timeline", "Timeline", "◷"],
   ["notes", "Notes", "▤"], ["theory", "Solve the case", "◎"],
 ];
 
-export default function Game({ navigate, user, setUser, progress, setProgress, initialSection = "overview" }) {
+export default function Game({ goHome, progress, setProgress, initialSection = "overview" }) {
+  // Navigation and selection state for the currently visible investigation screen.
   const [section, setSection] = useState(initialSection);
   const [npcId, setNpcId] = useState("anaya");
   const [selectedClue, setSelectedClue] = useState("01");
   const [question, setQuestion] = useState("");
+
+  // Temporary form state used while the player connects two pieces of evidence.
   const [linkA, setLinkA] = useState("");
   const [linkB, setLinkB] = useState("");
   const [linkReason, setLinkReason] = useState("");
+
+  // Temporary form state for recording a working case theory.
   const [suspectId, setSuspectId] = useState("");
   const [reason, setReason] = useState("");
   const [support, setSupport] = useState([]);
+
+  // Short user-facing feedback shared by actions across the investigation screens.
   const [notice, setNotice] = useState("");
+
+  // Derived view data recalculated from saved progress on every render.
   const found = clues.filter(c => progress.found.includes(c.id));
   const missing = clues.filter(c => !progress.found.includes(c.id));
   const npc = suspects.find(s => s.id === npcId);
   const messages = progress.interviews[npcId] || [];
+
+  // Changes investigation sections and clears feedback left by the previous section.
   function go(s) { setSection(s); setNotice(""); }
+
+  // Reveals the next clue in story order and stores it in the player's progress.
   function discover() {
     if (!missing.length) return;
     const next = missing[0];
@@ -31,6 +45,8 @@ export default function Game({ navigate, user, setUser, progress, setProgress, i
     setSelectedClue(next.id);
     setNotice(next.name + " added to your board.");
   }
+
+  // Adds a scripted interview exchange, or a safe fallback for a custom question.
   function ask(text) {
     const clean = text.trim();
     if (!clean) return;
@@ -39,19 +55,34 @@ export default function Game({ navigate, user, setUser, progress, setProgress, i
     setProgress(p => ({ ...p, interviews: { ...p.interviews, [npcId]: [...(p.interviews[npcId] || []), { question: clean, answer }] } }));
     setQuestion("");
   }
+
+  // Validates and saves a player-created relationship between discovered clues.
   function saveLink() {
     if (!linkA || !linkB || linkA === linkB || !linkReason.trim()) { setNotice("Choose two different discovered clues and explain your connection."); return; }
     setProgress(p => ({ ...p, links: [...p.links, { a: linkA, b: linkB, reason: linkReason.trim() }] }));
     setLinkA(""); setLinkB(""); setLinkReason("");
     setNotice("Connection saved as a theory, not confirmed fact.");
   }
+
+  // Validates and records the player's current suspect, evidence, and reasoning.
   function saveTheory(e) {
     e.preventDefault();
     if (!suspectId || !support.length || !reason.trim()) { setNotice("Choose a suspect, supporting evidence, and your reasoning."); return; }
     setProgress(p => ({ ...p, theory: { suspect: suspectId, evidence: support, reason: reason.trim() } }));
     setNotice("Theory recorded. There is no official solution yet, so no verdict is shown.");
   }
-  return <div className="game"><aside className="sidebar"><div className="logo"><span>Red</span>Thread <small>AI DETECTIVE</small></div><p className="side-label">INVESTIGATION</p><nav aria-label="Investigation sections">{menu.map(([id,label,icon]) => <button key={id} className={"side-item " + (section === id || (id === "suspects" && section === "interview") ? "active" : "")} aria-current={section === id ? "page" : undefined} onClick={() => go(id)}><span>{icon}</span>{label}</button>)}</nav><div className="side-bottom"><div className="investigator"><div className="mini-avatar">AM</div><div><b>Aarav Mehra</b><small>Played by {user?.name || "Guest"}</small></div></div><button className="text-button" onClick={() => navigate("cases")}>← Case selection</button><button className="text-button" onClick={() => { setUser(null); navigate("landing"); }}>Sign out</button></div></aside>
+
+  /*
+   * JSX render map for debugging:
+   * sidebar/header = persistent navigation and case status
+   * overview = dashboard, progress counters, and shortcuts
+   * suspects/interview = NPC selection and scripted conversations
+   * evidence = clue discovery, details, and player-created connections
+   * timeline = ordered events and confidence labels
+   * notes = automatically persisted investigation journal
+   * theory = suspect, supporting evidence, and reasoning form
+   */
+  return <div className="game"><aside className="sidebar"><div className="logo"><span>Red</span>Thread <small>AI DETECTIVE</small></div><p className="side-label">INVESTIGATION</p><nav aria-label="Investigation sections">{menu.map(([id,label,icon]) => <button key={id} className={"side-item " + (section === id || (id === "suspects" && section === "interview") ? "active" : "")} aria-current={section === id ? "page" : undefined} onClick={() => go(id)}><span>{icon}</span>{label}</button>)}</nav><div className="side-bottom"><div className="investigator"><div className="mini-avatar">AM</div><div><b>Aarav Mehra</b><small>Lead investigator</small></div></div><button className="text-button" onClick={goHome}>← Back to landing</button></div></aside>
     <div className="game-area"><header className="game-header"><div><p className="eyebrow">{caseFile.series.toUpperCase()} / DAY 1 OF 3</p><b>{caseFile.title}</b></div><div className="header-right"><span className="countdown">◷ 72 HOURS · STORY CLOCK</span><span className="saved">● Saved locally</span></div></header><main className="content"><div className="content-top"><div><p className="eyebrow">CASE 001 / BLACKWOOD RESIDENCY</p><h1>{section === "interview" ? "Interrogate: " + npc.name : menu.find(([id]) => id === section)?.[1]}</h1></div><span className="case-pill">ACTIVE INVESTIGATION</span></div>{notice && <div role="status" className="toast">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss notification">×</button></div>}
       {section === "overview" && <><div className="overview-hero"><img src={import.meta.env.BASE_URL + "crime-study.png"} alt="Rishabh's study and unfinished chessboard"/><div><p className="eyebrow">CASE BRIEF / THE SILENT WITNESS</p><h2>{caseFile.title}</h2><p>{caseFile.summary}</p><button className="btn primary" onClick={() => go("suspects")}>Begin Investigation →</button></div></div><div className="stats"><div><b>{found.length}<span>/10</span></b><small>CLUES DISCOVERED</small></div><div><b>{Object.values(progress.interviews).flat().length}</b><small>QUESTIONS ASKED</small></div><div><b>{progress.links.length}</b><small>CONNECTIONS MADE</small></div></div><div className="section-heading"><h2>People of interest</h2><button className="text-button accent" onClick={() => go("suspects")}>View all →</button></div><div className="suspect-tiles">{suspects.map(s => <button className="person-tile" key={s.id} onClick={() => { setNpcId(s.id); go("interview"); }}><img src={s.portrait} alt={"Portrait of " + s.name}/><div><strong>{s.name}</strong><span>{s.role}</span><small>INTERROGATE →</small></div></button>)}</div><div className="feature-row"><div className="note-feature"><p className="eyebrow">THE CRIME SCENE</p><h3>One king is missing.</h3><p>Dr. Malhotra was found in his study, facing an empty chair. A handwritten message addresses Aarav directly.</p><button className="text-button accent" onClick={() => go("evidence")}>Open evidence board →</button></div><div className="note-feature"><p className="eyebrow">YOUR NEXT STEP</p><h3>Follow the clues.</h3><p>Discover evidence, compare testimony, and record what can be verified. Suspicion alone is not proof.</p><button className="text-button accent" onClick={() => go("timeline")}>Inspect timeline →</button></div></div></>}
       {section === "suspects" && <section className="npc-selection"><p className="muted section-lead">Choose a person to question. Their answers are scripted for this offline preview.</p><div className="npc-selection-list">{suspects.map(s => <button key={s.id} className="npc-selection-row" onClick={() => { setNpcId(s.id); go("interview"); }}><img src={s.portrait} alt={"Portrait of " + s.name}/><span><b>{s.name}</b><small>{s.role}</small></span><span className="npc-chat-icon">☏</span></button>)}</div></section>}

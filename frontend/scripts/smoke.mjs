@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { createServer } from "vite";
@@ -18,10 +18,10 @@ try {
   ];
   for (const [section, expected] of sections) {
     const html = renderToString(React.createElement(Game, {
-      initialSection: section, navigate() {}, setUser() {}, setProgress() {},
-      user: { name: "Test Detective", mode: "guest" }, progress,
+      initialSection: section, goHome() {}, setProgress() {}, progress,
     }));
     assert.ok(html.includes(expected), section + " should render " + expected);
+    assert.ok(!html.includes("Sign out"), section + " should not show authentication controls");
     console.log("PASS", section);
   }
   assert.equal(story.suspects.length, 3);
@@ -29,8 +29,7 @@ try {
   for (const file of ["detective-office.png", "crime-study.png", "anaya.png", "kabir.png", "nisha.png"]) {
     assert.ok(existsSync(new URL("../public/" + file, import.meta.url)), file + " missing");
   }
-  assert.ok(readFileSync(new URL("../index.html", import.meta.url), "utf8").includes("accounts.google.com/gsi/client"));
-  console.log("PASS story data, image assets, and Google script");
+  console.log("PASS story data and image assets");
 } finally {
   await server.close();
 }
