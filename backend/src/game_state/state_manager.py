@@ -16,35 +16,27 @@ from src.progression import PreparedDialogueTurn, ProgressionGate, reaction_mark
 
 from .state_repository import GameSession, GameStateRepository
 
-__all__ = [
-    "StateChange",
-    "GameStateManager",
-    "DEFAULT_RECENT_TURNS",
-    "MAX_RECENT_TURNS",
-    "MESSAGES_PER_TURN",
-    "UNSET",
-]
-
-#: Bounded LLM context: a turn is one player message plus one reply.
+# How much past conversation the LLM gets. One turn = player message + suspect reply.
 DEFAULT_RECENT_TURNS = 5
 MAX_RECENT_TURNS = 10
 MESSAGES_PER_TURN = 2
 
 
 class _Unset:
+    """Type of UNSET, so we can tell "not given" apart from None."""
+
     __slots__ = ()
 
     def __repr__(self) -> str:
         return "UNSET"
 
 
-#: Marks a field that ``update_game_state`` must leave untouched.
 UNSET = _Unset()
 
 
 @dataclass(frozen=True, slots=True)
 class StateChange:
-    """Result of a mutation. ``changed`` is ``False`` for an idempotent no-op."""
+    """What a mutation returns. `changed` is False when nothing needed to happen."""
 
     state: GameState
     changed: bool
@@ -52,15 +44,11 @@ class StateChange:
 
 
 class GameStateManager:
-    """Session lifecycle and validated state transitions.
+    """Creates game sessions and moves them from one valid state to the next.
 
-    * Case, suspect and clue references are checked with the Case Engine.
-    * When a ``ProgressionGate`` is supplied it decides whether a clue may be
-      discovered, and it is re-evaluated after clue/interview changes. The
-      manager never decides stage conditions or fact authorization itself.
-    * Each public mutation is one logical transition: it is computed on
-      immutable values, saved once, and raises the revision by exactly one
-      (or not at all for a no-op or failure).
+    IDs are checked with the Case Engine, and stage/fact rules are left to the
+    ProgressionGate. Every change is saved once and bumps the revision by one;
+    a no-op or a failure does not touch the revision.
     """
 
     def __init__(
@@ -79,40 +67,38 @@ class GameStateManager:
         self._progression = progression
         self._lock = threading.RLock()
 
-    # --------------------------------------------------------------- lifecycle
+    # ---------------------------------------------------------------- sessions
 
     def create_game_session(
         self, case_id: str | None = None, game_id: str | None = None
     ) -> GameState:
-        """Create a fresh session for ``case_id`` (default: the loaded case)."""
-        resolved_case = self._engine.case_id if case_id is None else case_id
-        if resolved_case != self._engine.case_id:
-            raise ResourceNotFoundError(
-                f"Unknown case: {resolved_case!r}.",
-                code="CASE_NOT_FOUND",
-            )
-        resolved_id = uuid.uuid4().hex if game_id is None else game_id
+        """Start a new game (for the loaded case unless another case_id is given)."""
+        case_id = self._engine.case_id if case_id is None else case_id
+        if case_id != self._engine.case_id:
+            raise ResourceNotFoundError(f"Unknown case: {case_id!r}.", code="CASE_NOT_FOUND")
+
+        game_id = uuid.uuid4().hex if game_id is None else game_id
         try:
             if self._progression is not None:
-                state = self._progression.manager.initial_state(resolved_id)
+                state = self._progression.manager.initial_state(game_id)
             else:
-                state = GameState(game_id=resolved_id, case_id=resolved_case)
+                state = GameState(game_id=game_id, case_id=case_id)
         except (TypeError, ValueError) as exc:
             raise ContractValidationError(
                 "Game session could not be created.",
                 details=(str(exc),),
                 code="GAME_SESSION_INVALID",
             ) from exc
+
         with self._lock:
             self._repository.create(GameSession(state=state))
         return state
 
     def get_game_state(self, game_id: str) -> GameState:
-        """The current state. ``GameState`` is immutable, so it is safe to share."""
         return self._repository.get(game_id).state
 
     def get_current_stage_id(self, game_id: str) -> str | None:
-        """Current investigation stage, or ``None`` without a Progression Gate."""
+        """Current stage, or None when there is no Progression Gate."""
         if self._progression is None:
             return None
         state = self.get_game_state(game_id)
@@ -122,10 +108,10 @@ class GameStateManager:
         with self._lock:
             self._repository.delete(game_id)
 
-    # -------------------------------------------------------------- dialogue
+    # ---------------------------------------------------------------- dialogue
 
     def get_dialogue_history(self, game_id: str) -> tuple[DialogueMessage, ...]:
-        """The complete stored history of the game, oldest first."""
+        """Every stored message of the game, oldest first."""
         return self._repository.get(game_id).dialogue_history
 
     def get_recent_dialogue_history(
@@ -134,12 +120,9 @@ class GameStateManager:
         dialogue_session_id: str,
         max_turns: int = DEFAULT_RECENT_TURNS,
     ) -> tuple[DialogueMessage, ...]:
-        """Bounded context for an LLM request: the last ``max_turns`` turns of one
-        dialogue session. The stored history is left untouched."""
+        """Last `max_turns` turns of one conversation, used as LLM context."""
         if isinstance(max_turns, bool) or not isinstance(max_turns, int):
-            raise ContractValidationError(
-                "'max_turns' must be an int.", code="RECENT_TURNS_INVALID"
-            )
+            raise ContractValidationError("'max_turns' must be an int.", code="RECENT_TURNS_INVALID")
         if not 1 <= max_turns <= MAX_RECENT_TURNS:
             raise ContractValidationError(
                 f"'max_turns' must be between 1 and {MAX_RECENT_TURNS}.",
@@ -147,8 +130,8 @@ class GameStateManager:
                 code="RECENT_TURNS_INVALID",
             )
         history = self._repository.get(game_id).dialogue_history
-        in_session = tuple(m for m in history if m.session_id == dialogue_session_id)
-        return in_session[-max_turns * MESSAGES_PER_TURN :]
+        this_chat = tuple(m for m in history if m.session_id == dialogue_session_id)
+        return this_chat[-max_turns * MESSAGES_PER_TURN :]
 
     def append_dialogue_message(
         self,
@@ -156,17 +139,19 @@ class GameStateManager:
         message: DialogueMessage,
         expected_revision: int | None = None,
     ) -> StateChange:
-        """Append one validated message. Re-sending an identical message is a no-op."""
+        """Add a message. Sending the exact same message again is a no-op."""
         if not isinstance(message, DialogueMessage):
             raise ContractValidationError(
                 "Only DialogueMessage objects may enter the history.",
                 details=(type(message).__name__,),
                 code="DIALOGUE_MESSAGE_INVALID",
             )
+
         with self._lock:
             session = self._load(game_id, expected_revision)
             state = session.state
             self._require_active(state)
+
             if message.case_id != state.case_id:
                 raise ContractValidationError(
                     "Message belongs to a different case.",
@@ -175,16 +160,20 @@ class GameStateManager:
                 )
             if message.speaker_type == "suspect":
                 self._engine.get_suspect(message.speaker_id)  # type: ignore[arg-type]
-            for existing in session.dialogue_history:
-                if existing.message_id == message.message_id:
-                    if existing == message:
-                        return StateChange(state, False)
-                    raise StateConflictError(
-                        "A different message with this ID already exists.",
-                        details=(message.message_id,),
-                        code="DIALOGUE_MESSAGE_ID_CONFLICT",
-                    )
-            last = max(
+
+            same_id = next(
+                (m for m in session.dialogue_history if m.message_id == message.message_id), None
+            )
+            if same_id is not None:
+                if same_id == message:
+                    return StateChange(state, False)
+                raise StateConflictError(
+                    "A different message with this ID already exists.",
+                    details=(message.message_id,),
+                    code="DIALOGUE_MESSAGE_ID_CONFLICT",
+                )
+
+            last_sequence = max(
                 (
                     m.sequence_number
                     for m in session.dialogue_history
@@ -192,21 +181,20 @@ class GameStateManager:
                 ),
                 default=None,
             )
-            if last is not None and message.sequence_number <= last:
+            if last_sequence is not None and message.sequence_number <= last_sequence:
                 raise StateConflictError(
                     "Message is out of order for its dialogue session.",
-                    details=(f"sequence {message.sequence_number} after {last}",),
+                    details=(f"sequence {message.sequence_number} after {last_sequence}",),
                     code="DIALOGUE_MESSAGE_OUT_OF_ORDER",
                 )
-            sessions = state.dialogue_session_ids
-            if message.session_id not in sessions:
-                sessions = sessions + (message.session_id,)
-            new_state = replace(
-                state, dialogue_session_ids=sessions, revision=state.revision + 1
-            )
-            self._commit(
-                GameSession(new_state, session.dialogue_history + (message,)),
-                state.revision,
+
+            chats = state.dialogue_session_ids
+            if message.session_id not in chats:
+                chats += (message.session_id,)
+            new_state = self._save(
+                session,
+                replace(state, dialogue_session_ids=chats),
+                history=session.dialogue_history + (message,),
             )
             return StateChange(new_state, True)
 
@@ -221,16 +209,10 @@ class GameStateManager:
         presented_clue_ids: tuple[str, ...] = (),
         max_turns: int = DEFAULT_RECENT_TURNS,
     ) -> DialogueRequest:
-        """Build a request from stored state: facts come from the Progression Gate,
-        history from the bounded recent window. Requires a Progression Gate."""
-        if self._progression is None:
-            raise StateConflictError(
-                "A Progression Gate is required to build dialogue requests.",
-                code="PROGRESSION_UNAVAILABLE",
-            )
-        state = self.get_game_state(game_id)
-        history = self.get_recent_dialogue_history(game_id, dialogue_session_id, max_turns)
-        return self._progression.authorization.build_dialogue_request(
+        """Build the LLM request from stored state (needs a Progression Gate)."""
+        gate = self._require_progression("build dialogue requests")
+        state, history = self._state_and_recent_history(game_id, dialogue_session_id, max_turns)
+        return gate.authorization.build_dialogue_request(
             state,
             request_id=request_id,
             suspect_id=suspect_id,
@@ -250,16 +232,10 @@ class GameStateManager:
         presented_clue_ids: tuple[str, ...] = (),
         max_turns: int = DEFAULT_RECENT_TURNS,
     ) -> PreparedDialogueTurn:
-        """Like :meth:`build_dialogue_request`, plus the evidence reactions that
-        apply to the clues presented to this suspect. Nothing is stored."""
-        if self._progression is None:
-            raise StateConflictError(
-                "A Progression Gate is required to prepare dialogue turns.",
-                code="PROGRESSION_UNAVAILABLE",
-            )
-        state = self.get_game_state(game_id)
-        history = self.get_recent_dialogue_history(game_id, dialogue_session_id, max_turns)
-        return self._progression.authorization.prepare_dialogue_turn(
+        """Like build_dialogue_request, plus evidence reactions. Stores nothing."""
+        gate = self._require_progression("prepare dialogue turns")
+        state, history = self._state_and_recent_history(game_id, dialogue_session_id, max_turns)
+        return gate.authorization.prepare_dialogue_turn(
             state,
             request_id=request_id,
             suspect_id=suspect_id,
@@ -275,19 +251,12 @@ class GameStateManager:
         draft: DialogueDraft,
         expected_revision: int | None = None,
     ) -> StateChange:
-        """Finish a turn after the LLM draft is received.
+        """Finish a turn once the LLM draft is back and save new one-time reactions.
 
-        The draft must answer the prepared request and cite only its authorized
-        facts and presented clues. The reactions are recomputed from stored state
-        and must match the prepared ones, so they cannot be forged or replayed.
-        Delivered one-time reactions are recorded in one revision bump; if there
-        is nothing to record the call changes nothing.
+        Reactions are worked out again from the stored state; if they differ from
+        the prepared ones, the turn is stale (or forged) and is rejected.
         """
-        if self._progression is None:
-            raise StateConflictError(
-                "A Progression Gate is required to complete dialogue turns.",
-                code="PROGRESSION_UNAVAILABLE",
-            )
+        gate = self._require_progression("complete dialogue turns")
         if not isinstance(turn, PreparedDialogueTurn):
             raise ContractValidationError(
                 "'turn' must be a PreparedDialogueTurn.", code="DIALOGUE_TURN_INVALID"
@@ -296,76 +265,76 @@ class GameStateManager:
             raise ContractValidationError(
                 "'draft' must be a DialogueDraft.", code="DIALOGUE_DRAFT_INVALID"
             )
-        authorization = self._progression.authorization
+
+        authorization = gate.authorization
         with self._lock:
             session = self._load(game_id, expected_revision)
             state = session.state
             self._require_active(state)
+
             draft.validate_against_request(turn.request)
             authorization.validate_dialogue_request(state, turn.request)
-            expected = authorization.resolve_evidence_reactions(
+            reactions = authorization.resolve_evidence_reactions(
                 state, turn.request.suspect_id, turn.request.presented_clue_ids
             )
-            if expected != turn.reactions:
+            if reactions != turn.reactions:
                 raise StateConflictError(
                     "Evidence reactions no longer match the game state.",
                     code="DIALOGUE_TURN_STALE",
                 )
+
+            # Only one-time reactions that were not already shown get a marker.
             markers = tuple(
-                reaction_marker(item.suspect_id, item.clue_id)
-                for item in expected
-                if not item.repeatable and not item.is_repeat
+                reaction_marker(r.suspect_id, r.clue_id)
+                for r in reactions
+                if not r.repeatable and not r.is_repeat
             )
             if not markers:
                 return StateChange(state, False)
-            new_state = replace(
-                state,
-                completed_objective_ids=state.completed_objective_ids + markers,
-                revision=state.revision + 1,
+
+            new_state = self._save(
+                session, replace(state, completed_objective_ids=state.completed_objective_ids + markers)
             )
-            self._commit(GameSession(new_state, session.dialogue_history), state.revision)
             return StateChange(new_state, True)
 
-    # ------------------------------------------------------------- investigation
+    # ----------------------------------------------------------- investigation
 
     def discover_clue(
         self, game_id: str, clue_id: str, expected_revision: int | None = None
     ) -> StateChange:
-        """Record a clue. Unknown or foreign IDs and locked clues are rejected;
-        a clue that is already discovered is a no-op."""
+        """Record a found clue. Unknown or locked clues fail; a repeat is a no-op."""
         with self._lock:
             session = self._load(game_id, expected_revision)
             state = session.state
             self._require_active(state)
-            self._engine.get_clue(clue_id)  # unknown / other-case IDs raise here
+
+            self._engine.get_clue(clue_id)  # raises for unknown / other-case clue IDs
             if clue_id in state.discovered_clue_ids:
                 return StateChange(state, False)
             if self._progression is not None:
                 self._progression.authorization.require_clue_discoverable(state, clue_id)
-            candidate = replace(
-                state, discovered_clue_ids=state.discovered_clue_ids + (clue_id,)
+
+            return self._advance(
+                session, replace(state, discovered_clue_ids=state.discovered_clue_ids + (clue_id,))
             )
-            return self._transition(session, candidate)
 
     def record_interview(
         self, game_id: str, suspect_id: str, expected_revision: int | None = None
     ) -> StateChange:
-        """Record a completed interview. Called explicitly; opening a conversation
-        does not complete one. Repeating it is a no-op."""
+        """Mark an interview as finished (opening a chat does not count)."""
         with self._lock:
             session = self._load(game_id, expected_revision)
             state = session.state
             self._require_active(state)
+
             self._engine.get_suspect(suspect_id)
             if suspect_id in state.interviewed_suspect_ids:
                 return StateChange(state, False)
-            candidate = replace(
-                state,
-                interviewed_suspect_ids=state.interviewed_suspect_ids + (suspect_id,),
-            )
-            return self._transition(session, candidate)
 
-    # ---------------------------------------------------------------- updates
+            return self._advance(
+                session,
+                replace(state, interviewed_suspect_ids=state.interviewed_suspect_ids + (suspect_id,)),
+            )
 
     def update_game_state(
         self,
@@ -375,22 +344,24 @@ class GameStateManager:
         status: str | _Unset = UNSET,
         expected_revision: int | None = None,
     ) -> StateChange:
-        """Change the only freely settable fields. Progress collections and stage
-        markers can only change through the dedicated operations."""
+        """Change current_suspect_id / status. Everything else has its own method."""
         with self._lock:
             session = self._load(game_id, expected_revision)
             state = session.state
+
             changes: dict[str, object] = {}
-            if not isinstance(current_suspect_id, _Unset):
+            if current_suspect_id is not UNSET:
                 if current_suspect_id is not None:
                     self._engine.get_suspect(current_suspect_id)
                 if current_suspect_id != state.current_suspect_id:
                     changes["current_suspect_id"] = current_suspect_id
-            if not isinstance(status, _Unset) and status != state.status:
+            if status is not UNSET and status != state.status:
                 changes["status"] = status
+
             if not changes:
                 return StateChange(state, False)
             self._require_active(state)
+
             try:
                 candidate = replace(state, **changes)  # type: ignore[arg-type]
             except (TypeError, ValueError) as exc:
@@ -399,60 +370,73 @@ class GameStateManager:
                     details=(str(exc),),
                     code="GAME_STATE_UPDATE_INVALID",
                 ) from exc
-            new_state = replace(candidate, revision=state.revision + 1)
-            self._commit(GameSession(new_state, session.dialogue_history), state.revision)
-            return StateChange(new_state, True)
+            return StateChange(self._save(session, candidate), True)
 
     def increment_revision(
         self, game_id: str, expected_revision: int | None = None
     ) -> GameState:
-        """Explicitly advance the revision by one, as its own logical transition."""
+        """Bump the revision by one and nothing else."""
         with self._lock:
             session = self._load(game_id, expected_revision)
-            new_state = replace(session.state, revision=session.state.revision + 1)
-            self._commit(GameSession(new_state, session.dialogue_history), session.revision)
-            return new_state
+            return self._save(session, session.state)
 
-    # -------------------------------------------------------------- internals
+    # ----------------------------------------------------------------- helpers
 
-    def _transition(self, session: GameSession, candidate: GameState) -> StateChange:
-        """Apply progression evaluation, then save once with a single revision bump."""
-        base_revision = session.revision
+    def _advance(self, session: GameSession, candidate: GameState) -> StateChange:
+        """Let the Progression Gate react (it may unlock stages), then save."""
         unlocked: tuple[str, ...] = ()
         if self._progression is not None:
             result = self._progression.manager.evaluate(candidate)
             candidate = result.state
             unlocked = result.newly_unlocked_stage_ids
-        new_state = replace(candidate, revision=base_revision + 1)
-        self._commit(GameSession(new_state, session.dialogue_history), base_revision)
-        return StateChange(new_state, True, unlocked)
+        return StateChange(self._save(session, candidate), True, unlocked)
 
-    def _commit(self, session: GameSession, expected_revision: int) -> None:
-        self._repository.save(session, expected_revision)
+    def _save(
+        self,
+        session: GameSession,
+        new_state: GameState,
+        history: tuple[DialogueMessage, ...] | None = None,
+    ) -> GameState:
+        """Save `new_state` as revision + 1 and return it."""
+        new_state = replace(new_state, revision=session.revision + 1)
+        if history is None:
+            history = session.dialogue_history
+        self._repository.save(GameSession(new_state, history), session.revision)
+        return new_state
 
     def _load(self, game_id: str, expected_revision: int | None) -> GameSession:
         session = self._repository.get(game_id)
         if session.state.case_id != self._engine.case_id:
             raise ContractValidationError(
-                "Stored session belongs to a different case.",
-                code="GAME_STATE_CASE_MISMATCH",
+                "Stored session belongs to a different case.", code="GAME_STATE_CASE_MISMATCH"
             )
         if expected_revision is not None and expected_revision != session.revision:
             raise StateConflictError(
                 "Game session was modified concurrently.",
                 details=(
-                    f"expected revision {expected_revision}, "
-                    f"stored revision {session.revision}",
+                    f"expected revision {expected_revision}, stored revision {session.revision}",
                 ),
                 code="REVISION_CONFLICT",
             )
         return session
 
+    def _state_and_recent_history(
+        self, game_id: str, dialogue_session_id: str, max_turns: int
+    ) -> tuple[GameState, tuple[DialogueMessage, ...]]:
+        state = self.get_game_state(game_id)
+        history = self.get_recent_dialogue_history(game_id, dialogue_session_id, max_turns)
+        return state, history
+
+    def _require_progression(self, action: str) -> ProgressionGate:
+        if self._progression is None:
+            raise StateConflictError(
+                f"A Progression Gate is required to {action}.", code="PROGRESSION_UNAVAILABLE"
+            )
+        return self._progression
+
     @staticmethod
     def _require_active(state: GameState) -> None:
         if state.status != "active":
             raise StateConflictError(
-                "Game is not active.",
-                details=(f"status={state.status}",),
-                code="GAME_NOT_ACTIVE",
+                "Game is not active.", details=(f"status={state.status}",), code="GAME_NOT_ACTIVE"
             )
