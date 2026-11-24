@@ -117,14 +117,15 @@ flowchart TB
 
 | Layer | Technology / Option | Purpose |
 |---|---|---|
-| Frontend | ... | Game screens and client-side navigation |
-| Styling | ... | Responsive UI and visual design |
-| Main API | ... | API endpoints and orchestration |
+| Frontend | React | Game screens and client-side navigation |
+| Backend | Python | Backend Logic |
+| Styling | css | Responsive UI and visual design |
+| Main API | Fast API | API endpoints and orchestration |
 | Case and NPC modules | ... | Deterministic case and NPC knowledge logic where Python contracts are used |
 | Database | ... | Player sessions, progress, messages and notes where persistence is implemented |
-| LLM runtime | ... | NPC dialogue generation |
+| LLM Integration | Python | NPC dialogue generation |
 | Testing | ... | Unit, contract and integration testing |
-| Version control | ... | Source control and team collaboration |
+| Version control | Git | Source control and team collaboration |
 | UI design | Figma | Interface design and prototype reference |
 
 
