@@ -13,7 +13,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from engine_runner import EngineError, get_engine_info, initialize_engine, stream_generate
+try:
+    from engine_runner import EngineError, get_engine_info, initialize_engine, stream_generate
+except ModuleNotFoundError:
+    from src.llm.engine_runner import EngineError, get_engine_info, initialize_engine, stream_generate
 
 
 def run_one(prompt: str, cache_prompt: Optional[bool] = None) -> Dict[str, Any]:
