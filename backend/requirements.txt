@@ -1,0 +1,9 @@
+fastapi>=0.115,<1.0
+pydantic>=2.10,<3.0
+requests>=2.32,<3.0
+uvicorn>=0.34,<1.0
+
+# Test dependencies are included because the repository's documented
+# verification command runs pytest directly from this environment.
+httpx>=0.28,<1.0
+pytest>=8.3,<10.0
