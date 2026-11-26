@@ -1,11 +1,14 @@
-"""Thin holder for the existing local LLM engine so it can be health-checked and faked in tests."""
+"""Thin holder for the one shared local LLM engine so it can be health-checked and faked in tests.
+
+The same engine instance is handed to ``InterrogationService`` (see ``DialogueService``), so
+only one Ollama client exists per app.
+"""
 
 from __future__ import annotations
 
 import logging
 from typing import Any
 
-from src.dialogue_generator.llm_adapter import LLMAdapter
 from src.llm.engine_runner import EngineError, LocalLLMEngine
 
 __all__ = ["LLMGateway"]
@@ -23,7 +26,6 @@ class LLMGateway:
     def __init__(self, engine: Any | None, error: str | None = None) -> None:
         self._engine = engine
         self.error = error
-        self.adapter: LLMAdapter | None = LLMAdapter(engine) if engine is not None else None
 
     @classmethod
     def from_environment(cls) -> LLMGateway:
@@ -46,3 +48,8 @@ class LLMGateway:
         except Exception:  # noqa: BLE001 - a failing probe simply means "not available"
             log.warning("LLM health probe raised", exc_info=True)
             return False
+
+    @property
+    def engine(self) -> Any | None:
+        """The shared engine (``None`` when the configuration was invalid)."""
+        return self._engine

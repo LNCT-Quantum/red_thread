@@ -1,7 +1,7 @@
 """API test fixtures.
 
 The LLM is faked at the lowest level (the ``LocalLLMEngine`` interface), so the REAL
-``LLMAdapter``, ``DialoguePipeline``, ``FactExtractor`` and response validator all run.
+``InterrogationService``, prompt synthesizer, ``FactExtractor`` and reply checks all run.
 No network, Ollama or API key is needed.
 """
 
