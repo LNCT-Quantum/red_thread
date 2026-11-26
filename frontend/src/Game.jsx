@@ -1,96 +1,71 @@
-import React, { useState } from "react";
-import { caseFile, clues, suspects } from "./story";
+import React, { useEffect, useMemo, useState } from "react";
+import { api, getOrCreateSession } from "./api";
+import { presentClue, presentSuspect } from "./story";
 
-// Sidebar configuration: each entry maps a section ID to its visible label and icon.
-const menu = [
-  ["overview", "Dashboard", "⌂"], ["suspects", "NPCs", "♙"],
-  ["evidence", "Evidence", "◇"], ["timeline", "Timeline", "◷"],
-  ["notes", "Notes", "▤"], ["theory", "Solve the case", "◎"],
-];
+const menu = [["overview","Dashboard","⌂"],["suspects","NPCs","♙"],["evidence","Evidence","◇"],["timeline","Timeline","▷"],["notes","Notes","▤"],["theory","Solve the case","◎"]];
 
-export default function Game({ goHome, progress, setProgress, initialSection = "overview" }) {
-  // Navigation and selection state for the currently visible investigation screen.
-  const [section, setSection] = useState(initialSection);
-  const [npcId, setNpcId] = useState("anaya");
-  const [selectedClue, setSelectedClue] = useState("01");
-  const [question, setQuestion] = useState("");
+export default function Game({ caseInfo, goHome, progress, setProgress, initialSection = "overview" }) {
+  const [section,setSection]=useState(initialSection), [npcId,setNpcId]=useState(""), [selectedClue,setSelectedClue]=useState("");
+  const [question,setQuestion]=useState(""), [linkA,setLinkA]=useState(""), [linkB,setLinkB]=useState(""), [linkReason,setLinkReason]=useState("");
+  const [suspectId,setSuspectId]=useState(""), [reason,setReason]=useState(""), [support,setSupport]=useState([]), [notice,setNotice]=useState("");
+  const [session,setSession]=useState(null), [suspects,setSuspects]=useState([]), [evidence,setEvidence]=useState({collected:[],collectable:[]}), [timeline,setTimeline]=useState([]), [messages,setMessages]=useState({});
+  const [busy,setBusy]=useState(false), [error,setError]=useState("");
 
-  // Temporary form state used while the player connects two pieces of evidence.
-  const [linkA, setLinkA] = useState("");
-  const [linkB, setLinkB] = useState("");
-  const [linkReason, setLinkReason] = useState("");
+  const found=useMemo(()=>evidence.collected.map(presentClue),[evidence.collected]);
+  const missing=useMemo(()=>evidence.collectable.map((c,i)=>presentClue(c,found.length+i)),[evidence.collectable,found.length]);
+  const npc=suspects.find(s=>s.id===npcId)||suspects[0];
 
-  // Temporary form state for recording a working case theory.
-  const [suspectId, setSuspectId] = useState("");
-  const [reason, setReason] = useState("");
-  const [support, setSupport] = useState([]);
+  // GET /sessions/{session_id}/evidence returns both fully disclosed collected
+  // clues and the summaries of clues that progression currently allows collecting.
+  // It is called after every action that may change clue availability.
+  async function refreshEvidence(sid=session?.session_id){ if(!sid)return; setEvidence(await api(`/sessions/${sid}/evidence`)); }
 
-  // Short user-facing feedback shared by actions across the investigation screens.
-  const [notice, setNotice] = useState("");
+  useEffect(()=>{ let live=true; (async()=>{ try{
+    // Initial game bootstrap makes three independent calls in parallel:
+    // GET /cases/{case_id}/suspects -> public NPC profiles
+    // GET /cases/{case_id}/timeline -> spoiler-safe public timeline events
+    // GET or POST /sessions -> resume the browser's session or create a new one
+    const [rawSuspects,rawTimeline,state]=await Promise.all([api(`/cases/${caseInfo.case_id}/suspects`),api(`/cases/${caseInfo.case_id}/timeline`),getOrCreateSession(caseInfo.case_id)]);
 
-  // Derived view data recalculated from saved progress on every render.
-  const found = clues.filter(c => progress.found.includes(c.id));
-  const missing = clues.filter(c => !progress.found.includes(c.id));
-  const npc = suspects.find(s => s.id === npcId);
-  const messages = progress.interviews[npcId] || [];
+    // Once the session ID is known, GET /evidence builds the evidence board and
+    // GET /history restores the conversations displayed for each suspect.
+    const sid=state.session_id; const [ev,history]=await Promise.all([api(`/sessions/${sid}/evidence`),api(`/sessions/${sid}/history?limit=100&offset=0`)]);
+    if(!live)return; const people=rawSuspects.items.map(presentSuspect); const chats={};
+    for(const m of history.messages){ if(!chats[m.npc_id])chats[m.npc_id]=[]; const list=chats[m.npc_id]; if(m.speaker_type==="player")list.push({question:m.content,answer:""}); else if(m.speaker_type==="suspect"){ const last=list[list.length-1]; if(last&&!last.answer)last.answer=m.content; } }
+    setSession(state); setSuspects(people); setNpcId(people[0]?.id||""); setTimeline(rawTimeline.items); setEvidence(ev); setMessages(chats); setSelectedClue(ev.collected[0]?.clue_id||"");
+  }catch(e){if(live)setError(e.message);}})(); return()=>{live=false};},[caseInfo.case_id]);
 
-  // Changes investigation sections and clears feedback left by the previous section.
-  function go(s) { setSection(s); setNotice(""); }
+  function go(s){setSection(s);setNotice("");}
 
-  // Reveals the next clue in story order and stores it in the player's progress.
-  function discover() {
-    if (!missing.length) return;
-    const next = missing[0];
-    setProgress(p => ({ ...p, found: [...p.found, next.id] }));
-    setSelectedClue(next.id);
-    setNotice(next.name + " added to your board.");
-  }
+  // POST /sessions/{session_id}/clues/{clue_id}/discover asks the backend
+  // progression gate to collect the next currently available clue.
+  async function discover(){const next=missing[0];if(!next||busy)return;setBusy(true);try{const data=await api(`/sessions/${session.session_id}/clues/${next.id}/discover`,{method:"POST",body:{expected_revision:session.revision}});setSession(data.state);await refreshEvidence();setSelectedClue(next.id);setNotice(`${next.name} added to your board.`);}catch(e){setNotice(e.message);}finally{setBusy(false);}}
 
-  // Adds a scripted interview exchange, or a safe fallback for a custom question.
-  function ask(text) {
-    const clean = text.trim();
-    if (!clean) return;
-    const match = npc.questions.find(([q]) => q.toLowerCase() === clean.toLowerCase());
-    const answer = match?.[1] || "I cannot answer that reliably in this preview. Try one of the suggested questions.";
-    setProgress(p => ({ ...p, interviews: { ...p.interviews, [npcId]: [...(p.interviews[npcId] || []), { question: clean, answer }] } }));
-    setQuestion("");
-  }
+  // POST /sessions/{session_id}/dialogue sends the player's question to the
+  // backend AI pipeline. A longer timeout is used because local model startup
+  // can be slow. The response supplies npc_response and the updated session.
+  async function ask(text){const clean=text.trim();if(!clean||!npc||busy)return;setBusy(true);setQuestion("");try{const data=await api(`/sessions/${session.session_id}/dialogue`,{method:"POST",timeoutMs:180000,body:{npc_id:npc.id,message:clean,expected_revision:session.revision}});setSession(data.state);setMessages(p=>({...p,[npc.id]:[...(p[npc.id]||[]),{question:clean,answer:data.npc_response}]}));await refreshEvidence();}catch(e){setNotice(e.message);}finally{setBusy(false);}}
 
-  // Validates and saves a player-created relationship between discovered clues.
-  function saveLink() {
-    if (!linkA || !linkB || linkA === linkB || !linkReason.trim()) { setNotice("Choose two different discovered clues and explain your connection."); return; }
-    setProgress(p => ({ ...p, links: [...p.links, { a: linkA, b: linkB, reason: linkReason.trim() }] }));
-    setLinkA(""); setLinkB(""); setLinkReason("");
-    setNotice("Connection saved as a theory, not confirmed fact.");
-  }
+  // POST /sessions/{session_id}/interviews/{suspect_id}/complete records that
+  // this interview met the backend's minimum-turn rule and may unlock stages/clues.
+  async function completeInterview(){if(!npc||busy)return;setBusy(true);try{const data=await api(`/sessions/${session.session_id}/interviews/${npc.id}/complete`,{method:"POST",body:{expected_revision:session.revision}});setSession(data.state);await refreshEvidence();setNotice(data.already_completed?"Interview was already completed.":"Interview completed. New evidence may now be available.");}catch(e){setNotice(e.message);}finally{setBusy(false);}}
 
-  // Validates and records the player's current suspect, evidence, and reasoning.
-  function saveTheory(e) {
-    e.preventDefault();
-    if (!suspectId || !support.length || !reason.trim()) { setNotice("Choose a suspect, supporting evidence, and your reasoning."); return; }
-    setProgress(p => ({ ...p, theory: { suspect: suspectId, evidence: support, reason: reason.trim() } }));
-    setNotice("Theory recorded. There is no official solution yet, so no verdict is shown.");
-  }
+  // These two actions have no backend endpoint. They only save player-authored
+  // hypotheses in the sanitized local progress object managed by main.jsx.
+  function saveLink(){if(!linkA||!linkB||linkA===linkB||!linkReason.trim()){setNotice("Choose two different discovered clues and explain your connection.");return;}setProgress(p=>({...p,links:[...p.links,{a:linkA,b:linkB,reason:linkReason.trim()}]}));setLinkA("");setLinkB("");setLinkReason("");setNotice("Connection saved as a theory, not confirmed fact.");}
+  function saveTheory(e){e.preventDefault();if(!suspectId||!support.length||!reason.trim()){setNotice("Choose a suspect, supporting evidence, and your reasoning.");return;}setProgress(p=>({...p,theory:{suspect:suspectId,evidence:support,reason:reason.trim()}}));setNotice("Theory recorded.");}
 
-  /*
-   * JSX render map for debugging:
-   * sidebar/header = persistent navigation and case status
-   * overview = dashboard, progress counters, and shortcuts
-   * suspects/interview = NPC selection and scripted conversations
-   * evidence = clue discovery, details, and player-created connections
-   * timeline = ordered events and confidence labels
-   * notes = automatically persisted investigation journal
-   * theory = suspect, supporting evidence, and reasoning form
-   */
-  return <div className="game"><aside className="sidebar"><div className="logo"><span>Red</span>Thread <small>AI DETECTIVE</small></div><p className="side-label">INVESTIGATION</p><nav aria-label="Investigation sections">{menu.map(([id,label,icon]) => <button key={id} className={"side-item " + (section === id || (id === "suspects" && section === "interview") ? "active" : "")} aria-current={section === id ? "page" : undefined} onClick={() => go(id)}><span>{icon}</span>{label}</button>)}</nav><div className="side-bottom"><div className="investigator"><div className="mini-avatar">AM</div><div><b>Aarav Mehra</b><small>Lead investigator</small></div></div><button className="text-button" onClick={goHome}>← Back to landing</button></div></aside>
-    <div className="game-area"><header className="game-header"><div><p className="eyebrow">{caseFile.series.toUpperCase()} / DAY 1 OF 3</p><b>{caseFile.title}</b></div><div className="header-right"><span className="countdown">◷ 72 HOURS · STORY CLOCK</span><span className="saved">● Saved locally</span></div></header><main className="content"><div className="content-top"><div><p className="eyebrow">CASE 001 / BLACKWOOD RESIDENCY</p><h1>{section === "interview" ? "Interrogate: " + npc.name : menu.find(([id]) => id === section)?.[1]}</h1></div><span className="case-pill">ACTIVE INVESTIGATION</span></div>{notice && <div role="status" className="toast">{notice}<button onClick={() => setNotice("")} aria-label="Dismiss notification">×</button></div>}
-      {section === "overview" && <><div className="overview-hero"><img src={import.meta.env.BASE_URL + "crime-study.png"} alt="Rishabh's study and unfinished chessboard"/><div><p className="eyebrow">CASE BRIEF / THE SILENT WITNESS</p><h2>{caseFile.title}</h2><p>{caseFile.summary}</p><button className="btn primary" onClick={() => go("suspects")}>Begin Investigation →</button></div></div><div className="stats"><div><b>{found.length}<span>/10</span></b><small>CLUES DISCOVERED</small></div><div><b>{Object.values(progress.interviews).flat().length}</b><small>QUESTIONS ASKED</small></div><div><b>{progress.links.length}</b><small>CONNECTIONS MADE</small></div></div><div className="section-heading"><h2>People of interest</h2><button className="text-button accent" onClick={() => go("suspects")}>View all →</button></div><div className="suspect-tiles">{suspects.map(s => <button className="person-tile" key={s.id} onClick={() => { setNpcId(s.id); go("interview"); }}><img src={s.portrait} alt={"Portrait of " + s.name}/><div><strong>{s.name}</strong><span>{s.role}</span><small>INTERROGATE →</small></div></button>)}</div><div className="feature-row"><div className="note-feature"><p className="eyebrow">THE CRIME SCENE</p><h3>One king is missing.</h3><p>Dr. Malhotra was found in his study, facing an empty chair. A handwritten message addresses Aarav directly.</p><button className="text-button accent" onClick={() => go("evidence")}>Open evidence board →</button></div><div className="note-feature"><p className="eyebrow">YOUR NEXT STEP</p><h3>Follow the clues.</h3><p>Discover evidence, compare testimony, and record what can be verified. Suspicion alone is not proof.</p><button className="text-button accent" onClick={() => go("timeline")}>Inspect timeline →</button></div></div></>}
-      {section === "suspects" && <section className="npc-selection"><p className="muted section-lead">Choose a person to question. Their answers are scripted for this offline preview.</p><div className="npc-selection-list">{suspects.map(s => <button key={s.id} className="npc-selection-row" onClick={() => { setNpcId(s.id); go("interview"); }}><img src={s.portrait} alt={"Portrait of " + s.name}/><span><b>{s.name}</b><small>{s.role}</small></span><span className="npc-chat-icon">☏</span></button>)}</div></section>}
-      {section === "interview" && <section className="interview-screen"><button className="text-button" onClick={() => go("suspects")}>← Back to suspects</button><div className="interview-stage"><div className="interview-portrait"><img src={npc.portrait} alt={"Portrait of " + npc.name}/><div><h2>{npc.name}</h2><p>{npc.role}</p></div></div><div className="interview-chat"><div className="chat-log" aria-live="polite"><div className="bubble npc-bubble"><b>{npc.name}</b><p>{npc.intro}</p></div>{messages.map((m,i) => <React.Fragment key={i}><div className="bubble player-bubble"><b>You</b><p>{m.question}</p></div><div className="bubble npc-bubble"><b>{npc.name}</b><p>{m.answer}</p></div></React.Fragment>)}</div><div className="suggested"><span>ASK ABOUT</span>{npc.questions.map(([q]) => <button key={q} onClick={() => ask(q)}>{q}</button>)}</div><form className="ask-row" onSubmit={e => {e.preventDefault();ask(question);}}><input aria-label="Ask a question" placeholder="Ask another question…" value={question} maxLength={240} onChange={e => setQuestion(e.target.value)}/><button className="btn primary" type="submit">➤</button></form><p className="fine-print">Scripted preview. Unscripted questions receive a safe fallback, not live AI.</p></div></div></section>}
-      {section === "evidence" && <><p className="muted section-lead">Clues appear in story order. Collect them to examine details and compare them. Discovery does not confirm an interpretation.</p><div className="evidence-layout"><div><div className="board-head"><h2>Evidence board <span>{found.length} / 10</span></h2><button className="btn primary small" onClick={discover} disabled={!missing.length}>{missing.length ? "+ Search for next clue" : "All clues discovered"}</button></div><div className="evidence-board">{found.map(c => <button className={"clue " + (selectedClue === c.id ? "selected" : "")} key={c.id} onClick={() => setSelectedClue(c.id)}><span className="clue-icon">{c.icon}</span><span className="clue-no">EVIDENCE {c.id} · {c.type.toUpperCase()}</span><b>{c.name}</b><small>{c.summary}</small></button>)}</div><p className="fine-print">{missing.length} clues remain undiscovered.</p></div><aside className="detail-card">{(() => {const c = found.find(x => x.id === selectedClue) || found[0]; return <><p className="eyebrow">EVIDENCE {c.id} / {c.type.toUpperCase()}</p><div className="detail-art">{c.icon}</div><h2>{c.name}</h2><p>{c.detail}</p><span className="unverified">INTERPRETATION NOT VERIFIED</span></>;})()}</aside></div><div className="link-panel"><h2>Connect two clues</h2><p className="muted">Your connection is a personal hypothesis, not a confirmed deduction.</p><div className="link-form"><select aria-label="First clue" value={linkA} onChange={e => setLinkA(e.target.value)}><option value="">First clue</option>{found.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}</select><span>↔</span><select aria-label="Second clue" value={linkB} onChange={e => setLinkB(e.target.value)}><option value="">Second clue</option>{found.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}</select><input aria-label="Reason for connection" placeholder="Why might they connect?" value={linkReason} onChange={e => setLinkReason(e.target.value)}/><button className="btn secondary" onClick={saveLink}>Save connection</button></div>{progress.links.map((l,i) => <p className="saved-link" key={i}>〰 {clues.find(c=>c.id===l.a)?.name} + {clues.find(c=>c.id===l.b)?.name}: {l.reason}</p>)}</div></>}
-      {section === "timeline" && <><div className="timeline-art"><img src={import.meta.env.BASE_URL + "crime-study.png"} alt="Illustrated study where the case begins"/><div><p className="eyebrow">TIMELINE / DAY 1</p><h2>What happened that evening?</h2><p>The order of events is still being investigated. Estimated times and witness claims need independent checks.</p></div></div><div className="timeline"><div><time>18 MONTHS AGO</time><h3>Aarav's family is murdered</h3><p>The Puppeteer disappears after their confrontation.</p></div><div><time>EVENING / ESTIMATED</time><h3>Rishabh's final hours</h3><p>Investigators estimate death between 9:00 and 10:30 PM. The exact time is unknown.</p></div><div><time>9:17 PM / UNVERIFIED</time><h3>The watch stops</h3><p>Internal damage means this cannot prove the time of death.</p></div><div><time>9:40 PM / WITNESS CLAIM</time><h3>Anaya reports an argument</h3><p>Her identification of footsteps needs independent confirmation.</p></div><div><time>NOW / DAY 1</time><h3>The first message arrives</h3><p>Three more deaths are threatened. This is a story clock, not a real-time timer.</p></div></div></>}
-      {section === "notes" && <div className="notes-layout"><div className="note-feature"><p className="eyebrow">INVESTIGATION JOURNAL</p><h2>Separate what you know from what you suspect.</h2><p>Track alibis, possible contradictions, and open questions. Notes save automatically in this browser.</p><div className="notebook-art">✎ <span>CASE 001<br/>PRIVATE NOTES</span></div></div><div className="editor-card"><label htmlFor="notes">My notes</label><textarea id="notes" placeholder="Example: The 9:17 watch is damaged, so verify the timeline elsewhere…" value={progress.notes} onChange={e => setProgress(p => ({...p,notes:e.target.value}))}/><p className="fine-print">● Saved locally · {progress.notes.length} characters</p></div></div>}
-      {section === "theory" && <div className="theory-layout"><form className="theory-form" onSubmit={saveTheory}><p className="eyebrow">YOUR WORKING THEORY</p><h2>Who should be investigated further?</h2><p className="muted">Record a suspect, evidence, and reasoning. You may revise this later.</p><label htmlFor="theory-suspect">Person of interest</label><select id="theory-suspect" value={suspectId} onChange={e => setSuspectId(e.target.value)}><option value="">Choose a suspect</option>{suspects.map(s => <option value={s.id} key={s.id}>{s.name}</option>)}</select><label>Supporting clues</label><div className="check-list">{found.map(c => <label key={c.id}><input type="checkbox" checked={support.includes(c.id)} onChange={e => setSupport(p => e.target.checked ? [...p,c.id] : p.filter(id => id !== c.id))}/>{c.name}</label>)}</div><label htmlFor="theory-reason">Your reasoning</label><textarea id="theory-reason" placeholder="What does the evidence suggest? What still needs verification?" value={reason} onChange={e => setReason(e.target.value)}/><button className="btn primary" type="submit">Record theory →</button></form><aside className="detail-card"><div className="theory-symbol">?</div><h2>There is no verdict yet.</h2><p>The supplied story does not define the culprit, a complete timeline, or the final solution. This preview records your theory but cannot judge it fairly.</p>{progress.theory && <div className="recorded"><p className="eyebrow">RECORDED THEORY</p><b>{suspects.find(s=>s.id===progress.theory.suspect)?.name}</b><p>{progress.theory.reason}</p><small>Supported by {progress.theory.evidence.map(id=>clues.find(c=>c.id===id)?.name).join(", ")}</small></div>}</aside></div>}
-      <footer className="game-footer">Red Thread · The Last Three Days · Frontend story preview</footer>
-    </main></div></div>;
+  if(error)return <main className="landing"><section className="modal"><h2>Could not load investigation</h2><p>{error}</p><button className="btn quiet" onClick={goHome}>Back</button></section></main>;
+  if(!session||!npc)return <main className="landing"><section className="modal"><h2>Loading investigation…</h2><p>Retrieving the live case and session from the backend.</p></section></main>;
+  const chat=messages[npc.id]||[], total=found.length+missing.length;
+  return <div className="game"><aside className="sidebar"><div className="logo"><span>Red</span>Thread <small>AI DETECTIVE</small></div><p className="side-label">INVESTIGATION</p><nav>{menu.map(([id,label,icon])=><button key={id} className={"side-item "+(section===id||(id==="suspects"&&section==="interview")?"active":"")} onClick={()=>go(id)}><span>{icon}</span>{label}</button>)}</nav><div className="side-bottom"><div className="investigator"><div className="mini-avatar">AM</div><div><b>Aarav Mehra</b><small>Lead investigator</small></div></div><button className="text-button" onClick={goHome}>← Back to landing</button></div></aside>
+  <div className="game-area"><header className="game-header"><div><p className="eyebrow">{caseInfo.case_id.toUpperCase()} / {session.stage.title.toUpperCase()}</p><b>{caseInfo.title}</b></div><div className="header-right"><span className="countdown">STAGE {session.stage.index} OF {session.total_stages}</span><span className="saved">● Session active</span></div></header><main className="content"><div className="content-top"><div><p className="eyebrow">{caseInfo.case_id.toUpperCase()}</p><h1>{section==="interview"?`Interrogate: ${npc.name}`:menu.find(([id])=>id===section)?.[1]}</h1></div><span className="case-pill">{session.status.toUpperCase()} INVESTIGATION</span></div>{notice&&<div role="status" className="toast">{notice}<button onClick={()=>setNotice("")}>×</button></div>}
+  {section==="overview"&&<><div className="overview-hero"><img src={import.meta.env.BASE_URL+"crime-study.png"} alt="Crime scene"/><div><p className="eyebrow">CASE BRIEF</p><h2>{caseInfo.title}</h2><p>{caseInfo.description}</p><button className="btn primary" onClick={()=>go("suspects")}>Begin Investigation →</button></div></div><div className="stats"><div><b>{found.length}<span>/{total}</span></b><small>CLUES DISCOVERED</small></div><div><b>{Object.values(messages).flat().length}</b><small>QUESTIONS ASKED</small></div><div><b>{progress.links.length}</b><small>CONNECTIONS MADE</small></div></div><div className="section-heading"><h2>People of interest</h2><button className="text-button accent" onClick={()=>go("suspects")}>View all →</button></div><div className="suspect-tiles">{suspects.map(s=><button className="person-tile" key={s.id} onClick={()=>{setNpcId(s.id);go("interview");}}><img src={s.portrait} alt={s.name}/><div><strong>{s.name}</strong><span>{s.role}</span><small>INTERROGATE →</small></div></button>)}</div></>}
+  {section==="suspects"&&<section className="npc-selection"><p className="muted section-lead">Choose a person to question. Answers are generated by the backend dialogue service.</p><div className="npc-selection-list">{suspects.map(s=><button key={s.id} className="npc-selection-row" onClick={()=>{setNpcId(s.id);go("interview");}}><img src={s.portrait} alt={s.name}/><span><b>{s.name}</b><small>{s.role}</small></span><span className="npc-chat-icon">☏</span></button>)}</div></section>}
+  {section==="interview"&&<section className="interview-screen"><button className="text-button" onClick={()=>go("suspects")}>← Back to suspects</button><div className="interview-stage"><div className="interview-portrait"><img src={npc.portrait} alt={npc.name}/><div><h2>{npc.name}</h2><p>{npc.role}</p></div></div><div className="interview-chat"><div className="chat-log"><div className="bubble npc-bubble"><b>{npc.name}</b><p>{npc.intro}</p></div>{chat.map((m,i)=><React.Fragment key={i}><div className="bubble player-bubble"><b>You</b><p>{m.question}</p></div><div className="bubble npc-bubble"><b>{npc.name}</b><p>{m.answer}</p></div></React.Fragment>)}</div><div className="suggested"><span>ASK ABOUT</span>{npc.questions.map(q=><button key={q} disabled={busy} onClick={()=>ask(q)}>{q}</button>)}</div><form className="ask-row" onSubmit={e=>{e.preventDefault();ask(question);}}><input placeholder="Ask another question…" value={question} maxLength={500} disabled={busy} onChange={e=>setQuestion(e.target.value)}/><button className="btn primary" disabled={busy}>{busy?"…":"➤"}</button></form><button className="text-button accent" disabled={!chat.length||busy} onClick={completeInterview}>Complete interview</button><p className="fine-print">Live responses come from the backend AI pipeline.</p></div></div></section>}
+  {section==="evidence"&&<><p className="muted section-lead">Collect evidence currently unlocked by backend progression.</p><div className="evidence-layout"><div><div className="board-head"><h2>Evidence board <span>{found.length} / {total}</span></h2><button className="btn primary small" onClick={discover} disabled={!missing.length||busy}>{missing.length?"+ Search for next clue":"No clues currently available"}</button></div><div className="evidence-board">{found.map(c=><button className={"clue "+(selectedClue===c.id?"selected":"")} key={c.id} onClick={()=>setSelectedClue(c.id)}><span className="clue-icon">{c.icon}</span><span className="clue-no">{c.type.toUpperCase()}</span><b>{c.name}</b><small>{c.summary}</small></button>)}</div></div>{found.length?<aside className="detail-card">{(()=>{const c=found.find(x=>x.id===selectedClue)||found[0];return <><p className="eyebrow">{c.type.toUpperCase()}</p><div className="detail-art">{c.icon}</div><h2>{c.name}</h2><p>{c.detail}</p></>;})()}</aside>:<aside className="detail-card"><h2>No evidence collected yet</h2></aside>}</div><div className="link-panel"><h2>Connect two clues</h2><div className="link-form"><select value={linkA} onChange={e=>setLinkA(e.target.value)}><option value="">First clue</option>{found.map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</select><span>↔</span><select value={linkB} onChange={e=>setLinkB(e.target.value)}><option value="">Second clue</option>{found.map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</select><input placeholder="Why might they connect?" value={linkReason} onChange={e=>setLinkReason(e.target.value)}/><button className="btn secondary" onClick={saveLink}>Save connection</button></div>{progress.links.map((l,i)=><p className="saved-link" key={i}>〰 {found.find(c=>c.id===l.a)?.name} + {found.find(c=>c.id===l.b)?.name}: {l.reason}</p>)}</div></>}
+  {section==="timeline"&&<><div className="timeline-art"><img src={import.meta.env.BASE_URL+"crime-study.png"} alt="Crime scene"/><div><p className="eyebrow">PUBLIC TIMELINE</p><h2>Known events</h2><p>Only events currently safe to disclose are returned by the backend.</p></div></div><div className="timeline">{timeline.map(event=><div key={event.event_id}><time>{event.time_text.toUpperCase()} / {event.certainty.toUpperCase()}</time><h3>{event.description}</h3></div>)}</div></>}
+  {section==="notes"&&<div className="notes-layout"><div className="note-feature"><p className="eyebrow">INVESTIGATION JOURNAL</p><h2>Separate what you know from what you suspect.</h2><p>Personal notes remain saved in this browser.</p><div className="notebook-art">✎ <span>{caseInfo.case_id.toUpperCase()}<br/>PRIVATE NOTES</span></div></div><div className="editor-card"><label htmlFor="notes">My notes</label><textarea id="notes" value={progress.notes} onChange={e=>setProgress(p=>({...p,notes:e.target.value}))}/><p className="fine-print">● Saved locally · {progress.notes.length} characters</p></div></div>}
+  {section==="theory"&&<div className="theory-layout"><form className="theory-form" onSubmit={saveTheory}><p className="eyebrow">YOUR WORKING THEORY</p><h2>Who should be investigated further?</h2><label>Person of interest</label><select value={suspectId} onChange={e=>setSuspectId(e.target.value)}><option value="">Choose a suspect</option>{suspects.map(s=><option value={s.id} key={s.id}>{s.name}</option>)}</select><label>Supporting clues</label><div className="check-list">{found.map(c=><label key={c.id}><input type="checkbox" checked={support.includes(c.id)} onChange={e=>setSupport(p=>e.target.checked?[...p,c.id]:p.filter(id=>id!==c.id))}/>{c.name}</label>)}</div><label>Your reasoning</label><textarea value={reason} onChange={e=>setReason(e.target.value)}/><button className="btn primary">Record theory →</button></form><aside className="detail-card"><div className="theory-symbol">?</div><h2>Working theory</h2>{progress.theory&&<div className="recorded"><b>{suspects.find(s=>s.id===progress.theory.suspect)?.name}</b><p>{progress.theory.reason}</p></div>}</aside></div>}
+  <footer className="game-footer">Red Thread · Live backend session</footer></main></div></div>;
 }
