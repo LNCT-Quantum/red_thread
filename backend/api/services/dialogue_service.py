@@ -2,11 +2,13 @@
 
 1. validate session / NPC / presented clues and the optional client revision
 2. ``GameStateManager.prepare_dialogue_turn``     (facts + reactions decided by the Progression Gate)
-3. ``DialoguePipeline.generate``                    (prompt -> LLM -> parse -> validate, with fallback)
+3. ``InterrogationService.generate_reply``         (prompt -> LLM -> extract -> check, with fallback)
 4. ``GameStateManager.complete_dialogue_turn``      (re-validates the draft and the turn, records reactions)
 5. ``GameStateManager.append_dialogue_message`` x2  (player line, then NPC line)
 
-Nothing here builds prompts, picks facts or parses model output.
+Nothing here builds prompts, picks facts or parses model output: the Progression Gate
+decides what the NPC may know and ``src.llm.InterrogationService`` (the documented facade,
+``docs/backend_integration_guide.md``) turns that authorized context into a reply.
 """
 
 from __future__ import annotations
@@ -16,10 +18,15 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeout
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Any
 
+from shared.contracts.clue import Clue
 from shared.contracts.dialogue import DialogueMessage
-from src.dialogue_generator import DialoguePipeline, DialogueResult
+from shared.contracts.fact import Fact
+from shared.contracts.suspect import Suspect
+from src.llm import InterrogationResponse, InterrogationService
 from src.progression import PreparedDialogueTurn
 from src.progression.progression_rules import unlocked_stage_ids
 
@@ -33,6 +40,18 @@ from .runtime import CaseRuntime, RuntimeRegistry
 __all__ = ["DialogueService"]
 
 log = logging.getLogger("redthread.api.dialogue")
+
+
+@dataclass(frozen=True, slots=True)
+class _NpcContext:
+    """Authorized context for one turn, resolved from the case data and the Progression Gate."""
+
+    suspect: Suspect
+    facts: tuple[Fact, ...]              # only facts in request.authorized_fact_ids
+    clues: tuple[Clue, ...]              # only clues in request.presented_clue_ids
+    concealed_fact_ids: tuple[str, ...]  # authorized facts that are this suspect's secrets
+    hidden_statements: tuple[str, ...]   # every other fact: must never appear in the reply
+    revision: int
 
 
 class DialogueService:
@@ -49,18 +68,14 @@ class DialogueService:
         self._llm = llm
         self._timeout_s = timeout_s
         self._executor = ThreadPoolExecutor(max_workers=concurrency, thread_name_prefix="dialogue")
-        self._pipelines: dict[str, DialoguePipeline] = {}
+        # Reuse the gateway's engine: one Ollama client per app. When the engine
+        # configuration is invalid there is no service and take_turn answers 503.
+        self._llm_service: InterrogationService | None = (
+            InterrogationService(engine=llm.engine) if llm.engine is not None else None
+        )
 
     def close(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)
-
-    def _pipeline(self, runtime: CaseRuntime) -> DialoguePipeline:
-        pipeline = self._pipelines.get(runtime.case_id)
-        if pipeline is None:
-            assert self._llm.adapter is not None
-            pipeline = DialoguePipeline(runtime.engine, self._llm.adapter)
-            self._pipelines[runtime.case_id] = pipeline
-        return pipeline
 
     # ------------------------------------------------------------------------ public
     def take_turn(
@@ -91,7 +106,7 @@ class DialogueService:
                 "The game state was changed by another request. Reload the session and try again",
                 (f"expected revision {expected_revision}, current revision {state.revision}",),
             )
-        if not self._llm.configured:
+        if not self._llm.configured or self._llm_service is None:
             raise ApiError(503, "LLM_NOT_CONFIGURED", "The dialogue service is not configured")
         if not self._llm.is_available():
             raise ApiError(503, "LLM_UNAVAILABLE", "The dialogue service is temporarily unavailable")
@@ -108,11 +123,13 @@ class DialogueService:
                 dialogue_session_id=conv_id,
                 presented_clue_ids=tuple(presented_clue_ids),
             )
-            collectable_before = set(auth.discoverable_clue_ids(state))
-            reached_before = unlocked_stage_ids(state, runtime.gate.manager.rules)
+            current = runtime.manager.get_game_state(session_id)
+            context = self._npc_context(runtime, current, turn)
+            collectable_before = set(auth.discoverable_clue_ids(current))
+            reached_before = unlocked_stage_ids(current, runtime.gate.manager.rules)
 
-            # -- 3. the existing pipeline (bounded by the API timeout) --------------------
-            result = self._generate(runtime, turn)
+            # -- 3. InterrogationService (bounded by the API timeout) ---------------------
+            result = self._generate(turn, context)
 
             # -- 4/5. commit ----------------------------------------------------------------
             with self._guards.commit(session_id):
@@ -148,24 +165,59 @@ class DialogueService:
         )
 
     # --------------------------------------------------------------------- internals
-    def _generate(self, runtime: CaseRuntime, turn: PreparedDialogueTurn) -> DialogueResult:
-        pipeline = self._pipeline(runtime)
-        future = self._executor.submit(pipeline.generate, turn)
+    @staticmethod
+    def _npc_context(runtime: CaseRuntime, state: Any, turn: PreparedDialogueTurn) -> _NpcContext:
+        """Everything the facade needs, taken only from the gate-authorized request."""
+        engine = runtime.engine
+        request = turn.request
+        allowed = set(request.authorized_fact_ids)
+        fact_auth = runtime.gate.authorization.authorize_facts(state, request.suspect_id)
+        return _NpcContext(
+            suspect=engine.get_suspect(request.suspect_id),
+            facts=tuple(engine.get_fact(f) for f in request.authorized_fact_ids),
+            clues=tuple(engine.get_clue(c) for c in request.presented_clue_ids),
+            concealed_fact_ids=tuple(f for f in fact_auth.concealed_fact_ids if f in allowed),
+            hidden_statements=tuple(
+                f.statement for f in engine.list_facts() if f.fact_id not in allowed
+            ),
+            revision=state.revision,
+        )
+
+    def _generate(self, turn: PreparedDialogueTurn, context: _NpcContext) -> InterrogationResponse:
+        assert self._llm_service is not None  # checked in take_turn
+        future = self._executor.submit(
+            self._llm_service.generate_reply,
+            turn.request,
+            suspect=context.suspect,
+            knowledge=context.facts,
+            clues=context.clues,
+            revision=context.revision,
+            reactions=turn.reactions,
+            concealed_fact_ids=context.concealed_fact_ids,
+            hidden_statements=context.hidden_statements,
+        )
         try:
-            return future.result(timeout=self._timeout_s)
+            result = future.result(timeout=self._timeout_s)
         except FutureTimeout:
             future.cancel()
-            log.warning("dialogue timed out after %.0fs", self._timeout_s)
+            log.warning("dialogue %s timed out after %.1fs", turn.request.request_id, self._timeout_s)
+            # Nothing is committed: no history lines, no reactions, no revision bump.
             raise ApiError(
-                503, "LLM_TIMEOUT", "The suspect took too long to answer. Please try again"
+                503, "LLM_TIMEOUT", "The NPC took too long to answer. Please try again"
             ) from None
+        if result.is_fallback:
+            log.warning(
+                "dialogue %s used fallback after %d attempt(s): %s",
+                turn.request.request_id, result.attempts, result.fallback_reason,
+            )
+        return result
 
     def _commit(
         self,
         runtime: CaseRuntime,
         session_id: str,
         turn: PreparedDialogueTurn,
-        result: DialogueResult,
+        result: InterrogationResponse,
         npc_id: str,
         conv_id: str,
         message: str,

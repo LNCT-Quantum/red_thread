@@ -7,6 +7,7 @@ any intermediate hardcoded persona templates.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from pathlib import Path
 from typing import Any, Iterable
@@ -18,6 +19,9 @@ DEFAULT_CASE_DATA_DIR = Path(__file__).resolve().parents[2] / "case_data"
 DEFAULT_CASE_DATA_ROOT = DEFAULT_CASE_DATA_DIR / "case_001"
 DEFAULT_KNOWLEDGE_PATH = DEFAULT_CASE_DATA_ROOT / "npc_knowledge.json"
 DEFAULT_SUSPECTS_PATH = DEFAULT_CASE_DATA_ROOT / "suspects.json"
+
+#: Longest player question forwarded to the model (the API rejects longer messages).
+MAX_PLAYER_CHARS = 500
 
 
 def _resolve_case_title(case_id: str, case_data_dir: Path | str = DEFAULT_CASE_DATA_DIR) -> str:
@@ -33,6 +37,13 @@ def _resolve_case_title(case_id: str, case_data_dir: Path | str = DEFAULT_CASE_D
         except Exception:
             pass
     return f"Case {case_id}"
+
+
+def _as_mapping(value: Any) -> Any:
+    """Backend contracts (Fact, Clue, Suspect...) are dataclasses; render them like dicts."""
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return {f.name: getattr(value, f.name) for f in dataclasses.fields(value)}
+    return value
 
 
 def _get(value: Any, key: str, default: Any = None) -> Any:
@@ -51,13 +62,15 @@ def _message_text(message: Any) -> str:
     return str(message)
 
 
-def _history_text(history: Iterable[Any], limit: int = 4) -> str:
+def _history_text(history: Iterable[Any], limit: int = 4, suspect_name: str | None = None) -> str:
     turns = list(history or [])[-limit:]
     if not turns:
         return "No previous dialogue."
+    speaker_labels = {"player": "Detective", "suspect": suspect_name or "You"}
     rendered: list[str] = []
     for turn in turns:
         role = _get(turn, "role", _get(turn, "speaker_type", _get(turn, "speaker", "unknown")))
+        role = speaker_labels.get(str(role), role)
         content = _get(turn, "content", _get(turn, "message", turn))
         rendered.append(f"{role}: {_message_text(content)}")
     return "\n".join(rendered)
@@ -82,12 +95,13 @@ def _load_suspect_from_case(suspect_id: str, suspects_path: Path | str = DEFAULT
 
 
 def _records(data: Any) -> list[dict[str, Any]]:
-    if isinstance(data, list):
-        return [item for item in data if isinstance(item, dict)]
+    if isinstance(data, (list, tuple)):
+        items = [_as_mapping(item) for item in data]
+        return [item for item in items if isinstance(item, dict)]
     if isinstance(data, dict):
         for key in ("facts", "knowledge", "items"):
-            if isinstance(data.get(key), list):
-                return [item for item in data[key] if isinstance(item, dict)]
+            if isinstance(data.get(key), (list, tuple)):
+                return _records(data[key])
         result = []
         for key, value in data.items():
             if isinstance(value, dict):
@@ -147,10 +161,53 @@ def _select_authorized_facts(
     return selected
 
 
-def _render_facts(facts: list[dict[str, str]]) -> str:
+def _render_facts(facts: list[dict[str, str]], concealed: frozenset[str] = frozenset()) -> str:
     if not facts:
         return "No authorized, revealed facts are available."
-    return "\n".join(f"- {item['fact_id']}: {item['text']}" for item in facts)
+    lines: list[str] = []
+    for item in facts:
+        marker = " (SECRET - you are hiding this; do not volunteer it)" if item["fact_id"] in concealed else ""
+        lines.append(f"[{item['fact_id']}] {item['text']}{marker}")
+    return "\n".join(lines)
+
+
+def _render_reactions(reactions: Iterable[Any], allowed_fact_ids: set[str]) -> str:
+    """Renders backend-resolved evidence reactions (progression.evidence_reactions.ResolvedReaction).
+
+    Only fact IDs that are also in the authorized fact list are ever named, so a reaction can
+    never widen what the NPC may say.
+    """
+    lines: list[str] = []
+    for reaction in reactions or ():
+        clue_id = _get(reaction, "clue_id")
+        if not clue_id:
+            continue
+        is_repeat = bool(_get(reaction, "is_repeat", False))
+        parts = [f"- Reaction to {clue_id} ({_get(reaction, 'reaction_type', 'react')})."]
+        emotion = _get(reaction, "emotional_response")
+        if emotion:
+            parts.append(f"You feel: {emotion}")
+        position = _get(reaction, "stated_position")
+        if position:
+            parts.append(f"Your position: {position}")
+        change = _get(reaction, "statement_change")
+        if change and not is_repeat:
+            parts.append(f"How your statement changes: {change}")
+        if _get(reaction, "alters_alibi", False) and not is_repeat:
+            parts.append("This evidence forces you to adjust your alibi.")
+        reveal = [f for f in (_get(reaction, "reveal_fact_ids", ()) or ()) if f in allowed_fact_ids]
+        if is_repeat:
+            parts.append("You already reacted to this evidence earlier; do not reveal anything new about it.")
+        elif reveal:
+            parts.append(f"You may now admit: {', '.join(reveal)}.")
+        conceal = [f for f in (_get(reaction, "conceal_fact_ids", ()) or ()) if f in allowed_fact_ids]
+        if conceal:
+            parts.append(f"Keep concealing: {', '.join(conceal)}.")
+        limits = _get(reaction, "limits")
+        if limits:
+            parts.append(f"Limits: {limits}")
+        lines.append(" ".join(parts))
+    return "\n".join(lines)
 
 
 def _render_clues(clues: Any, clue_ids: tuple[str, ...]) -> str:
@@ -173,12 +230,15 @@ def _render_clues(clues: Any, clue_ids: tuple[str, ...]) -> str:
         if record is None:
             continue
         description = next(
-            (record.get(k) for k in ("description", "text", "content", "statement", "title")
+            (record.get(k) for k in ("description", "text", "content", "statement")
              if record.get(k) is not None),
             None,
         )
-        if description is not None:
-            lines.append(f"- {clue_id}: {description}")
+        title = record.get("title")
+        if description is not None and title:
+            lines.append(f"[{clue_id}] {title}: {description}")
+        elif description is not None or title:
+            lines.append(f"[{clue_id}] {description if description is not None else title}")
     return "\n".join(lines) if lines else (
         "Presented clue IDs: " + ", ".join(clue_ids)
         + "\nNo matching clue descriptions were found in supplied clue data."
@@ -194,6 +254,9 @@ def build_prompt(
     knowledge_path: str | Path | None = None,
     suspects_path: str | Path | None = None,
     clue_ids: tuple[str, ...] | None = None,
+    reactions: Iterable[Any] = (),
+    concealed_fact_ids: Iterable[str] = (),
+    strict: bool = False,
 ) -> str:
     """Builds a complete, formatted LLM interrogation prompt directly from backend contracts.
 
@@ -207,6 +270,11 @@ def build_prompt(
         knowledge_path: Optional path to npc_knowledge.json or facts.json.
         suspects_path: Optional path to suspects.json.
         clue_ids: Optional override of presented clue IDs.
+        reactions: Evidence reactions resolved by the Progression Gate for the presented
+                 clues (``PreparedDialogueTurn.reactions``).
+        concealed_fact_ids: Authorized facts the suspect is hiding
+                 (``FactAuthorization.concealed_fact_ids``).
+        strict: Add a reminder after a previous attempt was rejected.
     """
     suspect_id = _get(request, "suspect_id")
     if not isinstance(suspect_id, str):
@@ -233,6 +301,8 @@ def build_prompt(
         }
     elif isinstance(suspect, dict):
         suspect_data = suspect
+    elif dataclasses.is_dataclass(suspect) and not isinstance(suspect, type):
+        suspect_data = _as_mapping(suspect)
     else:
         raise TypeError(f"suspect must be a Suspect contract, dict, or None; got {type(suspect).__name__}")
 
@@ -275,11 +345,11 @@ def build_prompt(
     player_message = _get(request, "player_message")
     if player_message is None:
         raise ValueError("DialogueRequest.player_message is required.")
-    question = _message_text(player_message)
+    question = _message_text(player_message)[:MAX_PLAYER_CHARS]
     question = question.replace("</player_question>", "<\\/player_question>")
 
     # 4. Context History & Clues
-    history = _history_text(_get(request, "dialogue_history", []), limit=4)
+    history = _history_text(_get(request, "dialogue_history", []), limit=6, suspect_name=name)
     if clue_ids is not None:
         presented_clue_ids = tuple(clue_ids)
     else:
@@ -295,6 +365,16 @@ def build_prompt(
                 clues = None
 
     clue_text = _render_clues(clues, presented_clue_ids)
+    allowed_ids = {item["fact_id"] for item in facts}
+    concealed = frozenset(f for f in (concealed_fact_ids or ()) if f in allowed_ids)
+    reaction_text = _render_reactions(reactions, allowed_ids) if presented_clue_ids else ""
+    reaction_block = (
+        f"\n[YOUR REACTION TO THE PRESENTED EVIDENCE]\n{reaction_text}\n" if reaction_text else ""
+    )
+    retry_note = (
+        "\n- Your previous answer was rejected. Stay in character and use ONLY the listed facts."
+        if strict else ""
+    )
 
     age_str = f", a {age}-year-old" if age else ""
     traits_str = f"Personality traits to embody: {', '.join(traits)}." if traits else ""
@@ -317,17 +397,21 @@ Relationship to victim: {relationship}
 - Do not invent dates, times, evidence, relationships, or events.
 - If asked about something not present in authorized context, deflect or state you do not know, in character.
 - Never confess to anything that is not supported by your authorized context.
+- Facts marked SECRET are things you hide: deny, deflect or stay vague about them unless an
+  evidence reaction below explicitly lets you admit them.
+- Reply in English, 1 to 3 sentences, spoken dialogue only. Never mention fact or clue IDs
+  inside "content".{retry_note}
 
 [EPISTEMIC FACTS — ONLY THESE FACTS MAY BE USED]
-{_render_facts(facts)}
+{_render_facts(facts, concealed)}
 Do not use, infer, or reveal any fact that is not listed above.
 
 [PRESENTED EVIDENCE / CLUES]
 {clue_text}
 Use a clue only if its ID is present in the authorized/presented context.
 Do not invent clue details.
-
-[DIALOGUE HISTORY — LAST 4 TURNS]
+{reaction_block}
+[DIALOGUE HISTORY — MOST RECENT MESSAGES]
 {history}
 
 [UNTRUSTED PLAYER QUESTION]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .context_builder import DialogueContext
 
-MAX_PLAYER_CHARS = 500
+from src.llm.prompt_synthesizer import MAX_PLAYER_CHARS  # noqa: E402  (single source of truth)
 
 
 def build_prompt(ctx: DialogueContext, strict: bool = False) -> str:

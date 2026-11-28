@@ -6,7 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator
 
-from src.dialogue_generator.prompt_builder import MAX_PLAYER_CHARS
+from src.llm.prompt_synthesizer import MAX_PLAYER_CHARS
 
 __all__ = [
     "CreateSessionRequest",
